@@ -1,0 +1,58 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:../dev.db"
+}
+
+model Admin {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Customer {
+  id          Int       @id @default(autoincrement())
+  name        String
+  phone       String    @unique
+  address     String
+  spins       Spin[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model SecretCode {
+  id        Int       @id @default(autoincrement())
+  code      String    @unique
+  status    String    @default("UNUSED") // UNUSED, USED, EXPIRED
+  expiresAt DateTime
+  spins     Spin[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Prize {
+  id          Int       @id @default(autoincrement())
+  name        String
+  image       String
+  quantity    Int
+  probability Float
+  spins       Spin[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Spin {
+  id           Int        @id @default(autoincrement())
+  customerId   Int
+  customer     Customer   @relation(fields: [customerId], references: [id])
+  prizeId      Int
+  prize        Prize      @relation(fields: [prizeId], references: [id])
+  secretCodeId Int
+  secretCode   SecretCode @relation(fields: [secretCodeId], references: [id])
+  createdAt    DateTime   @default(now())
+}
