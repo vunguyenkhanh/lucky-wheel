@@ -1,0 +1,127 @@
+YÊU CẦU HỆ THỐNG QUAY THƯỞNG - SOUNDHUB LUCKY WHEEL
+
+1. Ngôn ngữ và công nghệ sử dụng
+
+Frontend:
+- Ngôn ngữ: ReactJS.
+- Cài đặt: Vite, Git.
+- State management: Zustand.
+- Quản lý form: React Hook Form.
+- Styling: TailwindCSS (Responsive, thiết kế thân thiện với thiết bị di động).
+
+Backend:
+- Ngôn ngữ: Node.js.
+- Framework: Express.
+- ORM: Prisma.
+- Authentication:
+  - Admin: JWT với refresh token.
+  - Khách hàng: Session-based với cookies.
+
+Cơ sở dữ liệu:
+- SQLite.
+
+---
+
+2. Chức năng chi tiết
+
+# Phần khách hàng
+
+1. Trang đăng ký/đăng nhập khách hàng:
+- Form nhập thông tin:
+  + Tên, Số điện thoại (SĐT), Địa chỉ, Mã bí mật.
+- Kiểm tra thông tin:
+  + Kiểm tra SĐT (nếu chưa có trong database thì đăng ký mới, còn rồi thì đăng nhập).
+  + Xác thực mã bí mật (chỉ mã hợp lệ mới cho phép đăng nhập).
+
+2. Trang quay thưởng:
+- Hiệu ứng vòng quay:
+  + Hiệu ứng mượt mà, sinh động, thiết kế đẹp mắt.
+- Random giải thưởng:
+  + Theo tỷ lệ đã cấu hình từ Admin.
+- Lưu kết quả:
+  + Ghi nhận kết quả quay thưởng của khách hàng vào database.
+- Đồng hồ đếm ngược:
+  + Hiển thị thời gian hết hạn của mã bí mật (real-time).
+
+3. Quản lý lượt quay:
+- Giới hạn lượt quay:
+  - Mỗi khách hàng chỉ được quay một lần.
+
+---
+
+# Phần Admin
+
+1. Quản lý tài khoản Admin:
+- CRUD tài khoản Admin (tạo, sửa, xóa, cập nhật).
+
+2. Quản lý tài khoản khách hàng:
+- CRUD tài khoản khách hàng (tạo, sửa, xóa, cập nhật thông tin khách hàng).
+
+3. Quản lý mã bí mật:
+- CRUD mã tự động:
+  + Sinh mã bí mật tự động với trạng thái ban đầu "Chưa dùng" với format: "SHxxxx".
+  + Thời gian hết hạn, thời gian còn lại (real-time, countdown), số lần cho phép sử dụng.
+- Theo dõi trạng thái mã:
+  - Trạng thái bao gồm: "Chưa dùng", "Đã dùng", "Hết hạn".
+
+
+4. Quản lý giải thưởng:
+- CRUD giải thưởng:
+  - Bao gồm các thông tin: Tên giải thưởng, hình ảnh, số lượng, tỷ lệ trúng thưởng.
+- Cập nhật trạng thái:
+  - Tự động thay đổi trạng thái giải thưởng khi hết số lượng.
+
+5. Chỉnh sửa vòng quay:
+- Tùy chỉnh:
+  - Tỷ lệ trúng thưởng cho từng giải.
+  - Giao diện vòng quay (màu sắc, font chữ).
+
+6. Thống kê và báo cáo:
+- Hiển thị biểu đồ:
+  - Pie chart: Tỷ lệ giải thưởng được quay.
+  - Bar chart: Số lượt tham gia hàng ngày, tuần, tháng.
+
+---
+
+3. Luồng hoạt động chi tiết
+
+# Khách hàng:
+1. Đăng ký/Đăng nhập:
+   - Nhập thông tin cần thiết.
+   - Backend kiểm tra thông tin (SĐT, mã bí mật).
+   - Tạo session, chuyển hướng đến trang quay thưởng.
+
+2. Quay thưởng:
+   - Vòng quay chạy với hiệu ứng đẹp mắt.
+   - Random giải thưởng dựa trên tỷ lệ đã cấu hình.
+   - Hiển thị kết quả và lưu kết quả vào database.
+
+# Admin:
+1. Đăng nhập:
+   - Sử dụng JWT để xác thực.
+   - Chuyển hướng đến dashboard quản lý.
+
+2. Quản lý:
+   - CRUD mã bí mật, giải thưởng, tài khoản Admin/khách hàng.
+
+3. Thống kê:
+   - Xem báo cáo chi tiết dưới dạng biểu đồ.
+
+---
+
+4. Yêu cầu phi chức năng
+
+1. Bảo mật:
+- Helmet.js: Chống các lỗ hổng bảo mật XSS, CSRF.
+- Bcrypt: Mã hóa mật khẩu.
+- Cookie bảo mật: Sử dụng httpOnly, secure cookie để bảo vệ session khách hàng.
+
+2. Hiệu năng:
+- Caching: Redis cache để tăng tốc độ phản hồi.
+- Phân trang: Áp dụng phân trang khi hiển thị danh sách lớn (mã bí mật, khách hàng).
+
+3. Trải nghiệm người dùng (UX):
+- Thông báo:
+  - Hiển thị thông báo rõ ràng khi có lỗi hoặc thành công (quay thưởng, đăng ký).
+- Google Analytics:
+  - Theo dõi hành vi người dùng để tối ưu hóa giao diện và tính năng.
