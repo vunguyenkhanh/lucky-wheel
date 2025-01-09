@@ -1,88 +1,117 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import FormField from '../components/common/FormField';
+import LoadingOverlay from '../components/common/LoadingOverlay';
+import { useToast } from '../contexts/ToastContext';
+import { useAuth } from '../hooks/useAuth';
 import { useAuthStore } from '../store/authStore';
+import { validateRegisterForm } from '../utils/validation';
 
 function Register() {
-  const navigate = useNavigate();
-  const register = useAuthStore((state) => state.register);
+  const { loading } = useAuth(false);
+  const { showToast } = useToast();
   const [formData, setFormData] = useState({
     fullName: '',
     phoneNumber: '',
     address: '',
   });
-  const [error, setError] = useState('');
+  const [errors, setErrors] = useState({});
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors((prev) => ({
+        ...prev,
+        [name]: '',
+      }));
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setErrors({}); // Clear all errors when submitting
+
+    // Validate form
+    const validationErrors = validateRegisterForm(formData);
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
 
     try {
-      await register(formData);
-      navigate('/login');
+      await useAuthStore.getState().register(formData);
+      showToast('Đăng ký thành công', 'success');
     } catch (err) {
-      setError(err.response?.data?.error || 'Đăng ký thất bại');
+      const errorInfo = handleError(err);
+      setErrors({ submit: errorInfo.error });
+      showToast(errorInfo.error, 'error');
     }
   };
 
   return (
-    <div className="max-w-md mx-auto">
-      <h2 className="text-3xl font-bold text-center mb-8">Đăng Ký</h2>
-      {error && <div className="bg-red-50 text-red-500 p-4 rounded-md mb-4">{error}</div>}
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">
-            Họ Tên
-          </label>
-          <input
-            type="text"
-            id="fullName"
-            name="fullName"
-            value={formData.fullName}
-            onChange={handleChange}
-            className="input"
+    <LoadingOverlay loading={loading}>
+      <div className="max-w-md mx-auto p-6">
+        <h1 className="text-2xl font-bold text-center mb-6">Đăng Ký Tài Khoản</h1>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {errors.submit && (
+            <div className="bg-red-50 text-red-500 p-4 rounded-md">{errors.submit}</div>
+          )}
+
+          <FormField
+            label="Họ và tên"
+            error={errors.fullName}
             required
-          />
-        </div>
-        <div>
-          <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
-            Số Điện Thoại
-          </label>
-          <input
-            type="tel"
-            id="phoneNumber"
-            name="phoneNumber"
-            value={formData.phoneNumber}
-            onChange={handleChange}
-            className="input"
+            helpText="Tối thiểu 2 ký tự"
+          >
+            <input
+              type="text"
+              name="fullName"
+              value={formData.fullName}
+              onChange={handleChange}
+              className={`input ${errors.fullName ? 'border-red-500' : ''}`}
+              placeholder="Nhập họ và tên"
+              autoComplete="name"
+            />
+          </FormField>
+
+          <FormField
+            label="Số điện thoại"
+            error={errors.phoneNumber}
             required
-          />
-        </div>
-        <div>
-          <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
-            Địa Chỉ
-          </label>
-          <textarea
-            id="address"
-            name="address"
-            value={formData.address}
-            onChange={handleChange}
-            rows={3}
-            className="input"
-            required
-          />
-        </div>
-        <button type="submit" className="btn btn-primary w-full">
-          Đăng Ký
-        </button>
-      </form>
-    </div>
+            helpText="Ví dụ: 0912345678"
+          >
+            <input
+              type="tel"
+              name="phoneNumber"
+              value={formData.phoneNumber}
+              onChange={handleChange}
+              className={`input ${errors.phoneNumber ? 'border-red-500' : ''}`}
+              placeholder="Nhập số điện thoại"
+              autoComplete="tel"
+            />
+          </FormField>
+
+          <FormField label="Địa chỉ" error={errors.address} required>
+            <textarea
+              name="address"
+              value={formData.address}
+              onChange={handleChange}
+              className={`input min-h-[80px] ${errors.address ? 'border-red-500' : ''}`}
+              placeholder="Nhập địa chỉ"
+              autoComplete="street-address"
+            />
+          </FormField>
+
+          <button type="submit" className="btn btn-primary w-full" disabled={loading}>
+            {loading ? 'Đang xử lý...' : 'Đăng ký'}
+          </button>
+        </form>
+      </div>
+    </LoadingOverlay>
   );
 }
 

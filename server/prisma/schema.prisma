@@ -32,7 +32,7 @@ model Admin {
 
 model SecretCode {
   id            Int       @id @default(autoincrement())
-  code          String    @unique // Format: SHxxxx
+  code          String    @unique @db.Char(6) // Format: SHxxxx (x là số)
   status        String    // "Chưa dùng", "Đã dùng", "Hết hạn"
   expirationDate DateTime
   maxUsage      Int      @default(1)

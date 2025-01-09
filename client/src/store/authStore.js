@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { authApi } from '../api/authApi';
+import { authService } from '../services';
 
 export const useAuthStore = create(
   persist(
@@ -16,8 +16,9 @@ export const useAuthStore = create(
       login: async (credentials) => {
         set({ loading: true, error: null });
         try {
-          const response = await authApi.login(credentials);
-          set({ isAuthenticated: true, user: response.data.user, loading: false });
+          const { user, token } = await authService.login(credentials);
+          set({ isAuthenticated: true, user, loading: false });
+          localStorage.setItem('token', token);
         } catch (error) {
           set({ error: error.response?.data?.error || 'Đăng nhập thất bại', loading: false });
           throw error;
@@ -27,8 +28,9 @@ export const useAuthStore = create(
       adminLogin: async (credentials) => {
         set({ loading: true, error: null });
         try {
-          const response = await authApi.adminLogin(credentials);
+          const { token } = await authService.adminLogin(credentials);
           set({ isAdmin: true, loading: false });
+          localStorage.setItem('token', token);
         } catch (error) {
           set({ error: error.response?.data?.error || 'Đăng nhập thất bại', loading: false });
           throw error;
@@ -38,9 +40,9 @@ export const useAuthStore = create(
       register: async (userData) => {
         set({ loading: true, error: null });
         try {
-          const response = await authApi.register(userData);
+          const data = await authService.register(userData);
           set({ loading: false });
-          return response.data;
+          return data;
         } catch (error) {
           set({ error: error.response?.data?.error || 'Đăng ký thất bại', loading: false });
           throw error;
@@ -49,24 +51,37 @@ export const useAuthStore = create(
 
       logout: async () => {
         try {
-          await authApi.logout();
-          set({ isAuthenticated: false, user: null });
+          // Gọi API logout để clear session/token ở server
+          await authService.logout();
         } catch (error) {
           console.error('Logout error:', error);
+        } finally {
+          // Clear local storage và state
+          localStorage.removeItem('token');
+          set({
+            isAuthenticated: false,
+            user: null,
+            error: null,
+          });
         }
       },
 
       adminLogout: async () => {
         try {
-          await authApi.adminLogout();
-          set({ isAdmin: false });
+          await authService.adminLogout();
         } catch (error) {
           console.error('Admin logout error:', error);
+        } finally {
+          localStorage.removeItem('token');
+          set({
+            isAdmin: false,
+            error: null,
+          });
         }
       },
 
-      // Reset state
       reset: () => {
+        localStorage.removeItem('token');
         set({
           isAuthenticated: false,
           isAdmin: false,

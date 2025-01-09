@@ -30,7 +30,8 @@ export const generateSecretCode = async (req, res) => {
       let code;
       let existingCode;
       do {
-        const random = Math.floor(1000 + Math.random() * 9000);
+        // Random 4 chữ số, đảm bảo luôn đủ 4 số
+        const random = String(Math.floor(1000 + Math.random() * 9000)).padStart(4, '0');
         code = `SH${random}`;
         existingCode = await prisma.secretCode.findUnique({
           where: { code },

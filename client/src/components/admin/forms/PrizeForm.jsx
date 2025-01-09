@@ -1,125 +1,128 @@
 import { useState } from 'react';
-import { useAdminStore } from '../../../store/adminStore';
+import { validatePrize } from '../../../utils/validation';
+import FormField from '../../common/FormField';
 
-function PrizeForm({ prize, onClose }) {
-  const { createPrize, updatePrize } = useAdminStore();
-  const [formData, setFormData] = useState({
-    name: prize?.name || '',
-    imageUrl: prize?.imageUrl || '',
-    quantity: prize?.quantity || 0,
-    winRate: prize?.winRate || 0,
-  });
-  const [error, setError] = useState('');
+function PrizeForm({ onSubmit, onImageUpload, initialData }) {
+  const [formData, setFormData] = useState(
+    initialData || {
+      name: '',
+      imageUrl: '',
+      quantity: 0,
+      winRate: 0,
+    },
+  );
+  const [errors, setErrors] = useState({});
+  const [uploading, setUploading] = useState(false);
 
   const handleChange = (e) => {
-    const value = e.target.type === 'number' ? parseFloat(e.target.value) : e.target.value;
-    setFormData({
-      ...formData,
-      [e.target.name]: value,
-    });
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: name === 'quantity' ? parseInt(value) || 0 : value,
+    }));
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const handleImageChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploading(true);
+      const imageUrl = await onImageUpload(file);
+      setFormData((prev) => ({ ...prev, imageUrl }));
+    } catch (error) {
+      setErrors((prev) => ({ ...prev, imageUrl: error.message }));
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setErrors({});
 
-    try {
-      if (prize) {
-        await updatePrize(prize.id, formData);
-      } else {
-        await createPrize(formData);
-      }
-      onClose();
-    } catch (err) {
-      setError(err.response?.data?.error || 'Có lỗi xảy ra');
+    const { isValid, errors: validationErrors } = validatePrize(formData);
+    if (!isValid) {
+      setErrors(validationErrors);
+      return;
+    }
+
+    await onSubmit(formData);
+    if (!initialData) {
+      setFormData({
+        name: '',
+        imageUrl: '',
+        quantity: 0,
+        winRate: 0,
+      });
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center">
-      <div className="bg-white rounded-lg p-8 max-w-md w-full">
-        <h2 className="text-2xl font-bold mb-6">
-          {prize ? 'Cập nhật giải thưởng' : 'Thêm giải thưởng mới'}
-        </h2>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <FormField label="Tên giải thưởng" error={errors.name} required>
+        <input
+          type="text"
+          name="name"
+          value={formData.name}
+          onChange={handleChange}
+          className={`input ${errors.name ? 'border-red-500' : ''}`}
+        />
+      </FormField>
 
-        {error && <div className="bg-red-50 text-red-500 p-4 rounded-md mb-4">{error}</div>}
+      <FormField label="Hình ảnh" error={errors.imageUrl} required>
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleImageChange}
+          className={`input ${errors.imageUrl ? 'border-red-500' : ''}`}
+          disabled={uploading}
+        />
+        {formData.imageUrl && (
+          <img
+            src={formData.imageUrl}
+            alt="Preview"
+            className="mt-2 w-32 h-32 object-cover rounded"
+          />
+        )}
+      </FormField>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-              Tên giải thưởng
-            </label>
-            <input
-              type="text"
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              className="input"
-              required
-            />
-          </div>
+      <FormField label="Số lượng" error={errors.quantity} required>
+        <input
+          type="number"
+          name="quantity"
+          value={formData.quantity}
+          onChange={handleChange}
+          min="0"
+          className={`input ${errors.quantity ? 'border-red-500' : ''}`}
+        />
+      </FormField>
 
-          <div>
-            <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700 mb-1">
-              URL hình ảnh
-            </label>
-            <input
-              type="url"
-              id="imageUrl"
-              name="imageUrl"
-              value={formData.imageUrl}
-              onChange={handleChange}
-              className="input"
-              required
-            />
-          </div>
+      <FormField
+        label="Tỷ lệ trúng"
+        error={errors.winRate}
+        required
+        helpText="Từ 0 đến 1 (VD: 0.1 = 10%)"
+      >
+        <input
+          type="number"
+          name="winRate"
+          value={formData.winRate}
+          onChange={handleChange}
+          step="0.01"
+          min="0"
+          max="1"
+          className={`input ${errors.winRate ? 'border-red-500' : ''}`}
+        />
+      </FormField>
 
-          <div>
-            <label htmlFor="quantity" className="block text-sm font-medium text-gray-700 mb-1">
-              Số lượng
-            </label>
-            <input
-              type="number"
-              id="quantity"
-              name="quantity"
-              value={formData.quantity}
-              onChange={handleChange}
-              min="0"
-              className="input"
-              required
-            />
-          </div>
-
-          <div>
-            <label htmlFor="winRate" className="block text-sm font-medium text-gray-700 mb-1">
-              Tỷ lệ trúng (0-1)
-            </label>
-            <input
-              type="number"
-              id="winRate"
-              name="winRate"
-              value={formData.winRate}
-              onChange={handleChange}
-              min="0"
-              max="1"
-              step="0.01"
-              className="input"
-              required
-            />
-          </div>
-
-          <div className="flex justify-end space-x-4 pt-4">
-            <button type="button" onClick={onClose} className="btn btn-secondary">
-              Hủy
-            </button>
-            <button type="submit" className="btn btn-primary">
-              {prize ? 'Cập nhật' : 'Thêm mới'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+      <button type="submit" className="btn btn-primary w-full" disabled={uploading}>
+        {uploading ? 'Đang tải lên...' : initialData ? 'Cập nhật' : 'Thêm mới'}
+      </button>
+    </form>
   );
 }
 

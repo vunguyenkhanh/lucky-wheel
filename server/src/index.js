@@ -5,12 +5,14 @@ import dotenv from 'dotenv';
 import express from 'express';
 import session from 'express-session';
 import helmet from 'helmet';
+import path from 'path';
 
 import { apiLimiter } from './middleware/rateLimiter.js';
 import adminRoutes from './routes/admin.js';
 import authRoutes from './routes/auth.js';
 import customerRoutes from './routes/customer.js';
 import prizeRoutes from './routes/prize.js';
+import uploadRoutes from './routes/upload.js';
 
 dotenv.config();
 
@@ -22,12 +24,15 @@ const port = process.env.PORT || 3000;
 app.use(helmet());
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN,
+    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   }),
 );
 app.use(express.json());
 app.use(cookieParser());
+app.use('/uploads', express.static(path.join(process.cwd(), 'public/uploads')));
 
 // Session middleware
 app.use(
@@ -51,6 +56,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/prizes', prizeRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {

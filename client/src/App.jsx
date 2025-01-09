@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import AsyncErrorBoundary from './components/error/AsyncErrorBoundary';
+import { ToastProvider } from './contexts/ToastContext';
 import AdminLayout from './layouts/AdminLayout';
 import MainLayout from './layouts/MainLayout';
 import AdminDashboard from './pages/admin/Dashboard';
@@ -13,27 +14,29 @@ import Wheel from './pages/Wheel';
 function App() {
   return (
     <BrowserRouter>
-      <AsyncErrorBoundary>
-        <Routes>
-          {/* Public Routes */}
-          <Route element={<MainLayout />}>
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/wheel" element={<Wheel />} />
-          </Route>
+      <ToastProvider>
+        <AsyncErrorBoundary>
+          <Routes>
+            {/* Public Routes */}
+            <Route element={<MainLayout />}>
+              <Route path="/" element={<Home />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/wheel" element={<Wheel />} />
+            </Route>
 
-          {/* Admin Routes */}
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route path="login" element={<AdminLogin />} />
-            <Route path="dashboard" element={<AdminDashboard />} />
-            <Route index element={<Navigate to="dashboard" replace />} />
-          </Route>
+            {/* Admin Routes */}
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route path="login" element={<AdminLogin />} />
+              <Route path="dashboard" element={<AdminDashboard />} />
+              <Route index element={<Navigate to="dashboard" replace />} />
+            </Route>
 
-          {/* 404 */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </AsyncErrorBoundary>
+            {/* 404 */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AsyncErrorBoundary>
+      </ToastProvider>
     </BrowserRouter>
   );
 }

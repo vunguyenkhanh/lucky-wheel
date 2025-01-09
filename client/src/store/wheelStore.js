@@ -1,53 +1,55 @@
 import { create } from 'zustand';
-import { wheelApi } from '../api/wheelApi';
+import { wheelService } from '../services';
 
 export const useWheelStore = create((set) => ({
   // State
-  prizes: [],
-  spinResult: null,
   spinning: false,
+  result: null,
+  history: [],
   loading: false,
   error: null,
 
   // Actions
-  fetchPrizes: async () => {
-    set({ loading: true });
-    try {
-      const response = await wheelApi.getPrizes();
-      set({ prizes: response.data.prizes, loading: false });
-    } catch (error) {
-      set({
-        error: error.response?.data?.error || 'Lỗi lấy danh sách giải thưởng',
-        loading: false,
-      });
-    }
-  },
-
   spin: async () => {
     set({ spinning: true, error: null });
     try {
-      const response = await wheelApi.spin();
-      set({ spinResult: response.data.prize, spinning: false });
-      return response.data.prize;
+      const result = await wheelService.spin();
+      set({ result, spinning: false });
+      return result;
     } catch (error) {
-      set({
-        error: error.response?.data?.error || 'Lỗi quay thưởng',
-        spinning: false,
-      });
+      set({ error: error.response?.data?.error || 'Lỗi quay thưởng', spinning: false });
       throw error;
     }
   },
 
-  resetSpin: () => {
-    set({ spinResult: null, error: null });
+  fetchHistory: async () => {
+    set({ loading: true, error: null });
+    try {
+      const { history } = await wheelService.getSpinHistory();
+      set({ history, loading: false });
+    } catch (error) {
+      set({ error: error.response?.data?.error || 'Lỗi tải lịch sử', loading: false });
+      throw error;
+    }
   },
 
-  // Reset state
+  checkEligibility: async () => {
+    set({ loading: true, error: null });
+    try {
+      const { canSpin } = await wheelService.checkSpinEligibility();
+      set({ loading: false });
+      return canSpin;
+    } catch (error) {
+      set({ error: error.response?.data?.error || 'Lỗi kiểm tra điều kiện', loading: false });
+      throw error;
+    }
+  },
+
   reset: () => {
     set({
-      prizes: [],
-      spinResult: null,
       spinning: false,
+      result: null,
+      history: [],
       loading: false,
       error: null,
     });
