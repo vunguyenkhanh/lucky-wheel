@@ -1,29 +1,79 @@
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const cookieParser = require('cookie-parser');
-const { PrismaClient } = require('@prisma/client');
+import { PrismaClient } from '@prisma/client';
+import cookieParser from 'cookie-parser';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import express from 'express';
+import session from 'express-session';
+import helmet from 'helmet';
+
+import { apiLimiter } from './middleware/rateLimiter.js';
+import adminRoutes from './routes/admin.js';
+import authRoutes from './routes/auth.js';
+import customerRoutes from './routes/customer.js';
+import prizeRoutes from './routes/prize.js';
+
+dotenv.config();
 
 const app = express();
 const prisma = new PrismaClient();
+const port = process.env.PORT || 3000;
 
 // Middleware
+app.use(helmet());
 app.use(
   cors({
-    origin: 'http://localhost:5173',
+    origin: process.env.CORS_ORIGIN,
     credentials: true,
   }),
 );
-app.use(helmet());
 app.use(express.json());
 app.use(cookieParser());
 
-// Test route
-app.get('/', (req, res) => {
-  res.json({ message: 'Lucky Wheel API is running' });
+// Session middleware
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || 'your-secret-key',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === 'production',
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
+    },
+  }),
+);
+
+// Rate limiter cho toàn bộ API
+app.use('/api', apiLimiter);
+
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/customers', customerRoutes);
+app.use('/api/prizes', prizeRoutes);
+app.use('/api/admin', adminRoutes);
+
+// Health check route
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date() });
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({
+    error: 'Đã xảy ra lỗi!',
+    message: process.env.NODE_ENV === 'development' ? err.message : undefined,
+  });
+});
+
+// Start server
+app.listen(port, () => {
+  console.log(`Server đang chạy tại http://localhost:${port}`);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+  console.log('SIGTERM signal received: closing HTTP server');
+  await prisma.$disconnect();
+  process.exit(0);
 });

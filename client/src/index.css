@@ -1,3 +1,89 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  body {
+    @apply text-gray-800 bg-gray-50;
+  }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply px-4 py-2 rounded-md font-medium transition-all duration-200 transform hover:scale-105;
+  }
+
+  .btn-primary {
+    @apply bg-indigo-600 text-white hover:bg-indigo-700;
+  }
+
+  .btn-secondary {
+    @apply bg-gray-200 text-gray-800 hover:bg-gray-300;
+  }
+
+  .input {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-md
+      focus:outline-none focus:ring-2 focus:ring-indigo-500
+      transition-all duration-200
+      hover:border-indigo-300;
+  }
+
+  /* Responsive container */
+  .container {
+    @apply px-4 mx-auto
+      sm:max-w-[540px]
+      md:max-w-[720px]
+      lg:max-w-[960px]
+      xl:max-w-[1140px];
+  }
+
+  /* Card styles */
+  .card {
+    @apply bg-white rounded-lg shadow-md overflow-hidden
+      transition-transform duration-200 hover:shadow-lg
+      transform hover:-translate-y-1;
+  }
+}
+
+/* Custom animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.4s ease-out;
+}
