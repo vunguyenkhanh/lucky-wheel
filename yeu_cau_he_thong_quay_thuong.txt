@@ -1,127 +1,171 @@
 YÊU CẦU HỆ THỐNG QUAY THƯỞNG - SOUNDHUB LUCKY WHEEL
 
+---
+
 1. Ngôn ngữ và công nghệ sử dụng
 
 Frontend:
-- Ngôn ngữ: ReactJS.
-- Cài đặt: Vite, Git.
-- State management: Zustand.
-- Quản lý form: React Hook Form.
-- Styling: TailwindCSS (Responsive, thiết kế thân thiện với thiết bị di động).
+- Ngôn ngữ: ReactJS
+- Cài đặt: Vite, Git
+- Quản lý state: Zustand
+- Quản lý form: React Hook Form
+- Styling: TailwindCSS (hỗ trợ Responsive, thiết kế thân thiện với thiết bị di động)
 
 Backend:
-- Ngôn ngữ: Node.js.
-- Framework: Express.
-- ORM: Prisma.
+- Ngôn ngữ: Node.js
+- Framework: Express
+- ORM: Prisma
 - Authentication:
-  - Admin: JWT với refresh token.
-  - Khách hàng: Session-based với cookies.
+  - Admin: JWT với refresh token
+  - Khách hàng: Session-based với cookies
 
 Cơ sở dữ liệu:
-- SQLite.
+- SQLite
 
 ---
 
 2. Chức năng chi tiết
 
-# Phần khách hàng
+Phần khách hàng
 
 1. Trang đăng ký/đăng nhập khách hàng:
-- Form nhập thông tin:
-  + Tên, Số điện thoại (SĐT), Địa chỉ, Mã bí mật.
-- Kiểm tra thông tin:
-  + Kiểm tra SĐT (nếu chưa có trong database thì đăng ký mới, còn rồi thì đăng nhập).
-  + Xác thực mã bí mật (chỉ mã hợp lệ mới cho phép đăng nhập).
+   - Đăng ký:
+     - Nhập thông tin: Họ tên, Số điện thoại (SĐT), Địa chỉ.
+     - Kiểm tra SĐT:
+       - Nếu SĐT chưa tồn tại: Tạo tài khoản mới và lưu thông tin vào database.
+       - Nếu SĐT đã tồn tại: Hiển thị thông báo lỗi "Số điện thoại đã được đăng ký".
+     - Hoàn tất đăng ký: Hiển thị thông báo thành công và chuyển hướng đến trang đăng nhập.
+   - Đăng nhập:
+     - Nhập thông tin: Số điện thoại và mã bí mật (được cấp bởi Admin).
+     - Xác thực:
+       - Nếu thông tin hợp lệ: Tạo session và chuyển hướng đến trang quay thưởng.
+       - Nếu không hợp lệ: Hiển thị thông báo lỗi.
 
 2. Trang quay thưởng:
-- Hiệu ứng vòng quay:
-  + Hiệu ứng mượt mà, sinh động, thiết kế đẹp mắt.
-- Random giải thưởng:
-  + Theo tỷ lệ đã cấu hình từ Admin.
-- Lưu kết quả:
-  + Ghi nhận kết quả quay thưởng của khách hàng vào database.
-- Đồng hồ đếm ngược:
-  + Hiển thị thời gian hết hạn của mã bí mật (real-time).
+   - Hiệu ứng vòng quay:
+     - Hiển thị hiệu ứng mượt mà, thiết kế đẹp mắt.
+   - Random giải thưởng:
+     - Phân giải thưởng dựa trên tỷ lệ được cấu hình bởi Admin.
+   - Lưu kết quả:
+     - Ghi nhận kết quả vào cơ sở dữ liệu.
+   - Đồng hồ đếm ngược:
+     - Hiển thị thời gian hết hạn mã bí mật theo thời gian thực (real-time).
 
 3. Quản lý lượt quay:
-- Giới hạn lượt quay:
-  - Mỗi khách hàng chỉ được quay một lần.
+   - Mỗi khách hàng chỉ được quay thưởng một lần.
 
 ---
 
-# Phần Admin
+Phần Admin
 
 1. Quản lý tài khoản Admin:
-- CRUD tài khoản Admin (tạo, sửa, xóa, cập nhật).
+   - Tạo, sửa, xóa, cập nhật thông tin tài khoản Admin.
 
 2. Quản lý tài khoản khách hàng:
-- CRUD tài khoản khách hàng (tạo, sửa, xóa, cập nhật thông tin khách hàng).
+   - Tạo, sửa, xóa, cập nhật thông tin khách hàng.
 
 3. Quản lý mã bí mật:
-- CRUD mã tự động:
-  + Sinh mã bí mật tự động với trạng thái ban đầu "Chưa dùng" với format: "SHxxxx".
-  + Thời gian hết hạn, thời gian còn lại (real-time, countdown), số lần cho phép sử dụng.
-- Theo dõi trạng thái mã:
-  - Trạng thái bao gồm: "Chưa dùng", "Đã dùng", "Hết hạn".
-
+   - Tự động sinh mã bí mật với trạng thái ban đầu "Chưa dùng".
+   - Format mã: "SHxxxx".
+   - Quản lý các thông tin: thời gian hết hạn, thời gian còn lại (real-time countdown), số lần sử dụng.
+   - Trạng thái mã: "Chưa dùng", "Đã dùng", "Hết hạn".
 
 4. Quản lý giải thưởng:
-- CRUD giải thưởng:
-  - Bao gồm các thông tin: Tên giải thưởng, hình ảnh, số lượng, tỷ lệ trúng thưởng.
-- Cập nhật trạng thái:
-  - Tự động thay đổi trạng thái giải thưởng khi hết số lượng.
+   - Tạo, sửa, xóa, cập nhật thông tin giải thưởng: Tên, hình ảnh, số lượng, tỷ lệ trúng.
+   - Tự động thay đổi trạng thái giải thưởng khi hết số lượng.
 
 5. Chỉnh sửa vòng quay:
-- Tùy chỉnh:
-  - Tỷ lệ trúng thưởng cho từng giải.
-  - Giao diện vòng quay (màu sắc, font chữ).
+   - Tùy chỉnh tỷ lệ trúng thưởng.
+   - Tùy chỉnh giao diện vòng quay (màu sắc, font chữ).
 
 6. Thống kê và báo cáo:
-- Hiển thị biểu đồ:
-  - Pie chart: Tỷ lệ giải thưởng được quay.
-  - Bar chart: Số lượt tham gia hàng ngày, tuần, tháng.
+   - Hiển thị biểu đồ:
+     - Pie chart: Tỷ lệ giải thưởng đã quay.
+     - Bar chart: Số lượt tham gia theo ngày, tuần, tháng.
 
 ---
 
 3. Luồng hoạt động chi tiết
 
-# Khách hàng:
+Khách hàng
 1. Đăng ký/Đăng nhập:
-   - Nhập thông tin cần thiết.
-   - Backend kiểm tra thông tin (SĐT, mã bí mật).
-   - Tạo session, chuyển hướng đến trang quay thưởng.
+   - Đăng ký:
+     - Nhập thông tin cá nhân (Họ tên, SĐT, Địa chỉ).
+     - Kiểm tra SĐT: Nếu chưa tồn tại, tạo tài khoản mới. Nếu đã tồn tại, báo lỗi.
+   - Đăng nhập:
+     - Nhập SĐT và mã bí mật (được cấp bởi Admin).
+     - Xác thực thông tin: Nếu hợp lệ, tạo session và chuyển đến trang quay thưởng.
 
 2. Quay thưởng:
-   - Vòng quay chạy với hiệu ứng đẹp mắt.
-   - Random giải thưởng dựa trên tỷ lệ đã cấu hình.
-   - Hiển thị kết quả và lưu kết quả vào database.
+   - Vòng quay hoạt động với hiệu ứng đẹp mắt.
+   - Random giải thưởng dựa trên cấu hình từ Admin.
+   - Hiển thị kết quả quay và lưu kết quả vào database.
 
-# Admin:
+Admin
 1. Đăng nhập:
-   - Sử dụng JWT để xác thực.
-   - Chuyển hướng đến dashboard quản lý.
+   - Sử dụng JWT để xác thực tài khoản Admin.
+   - Sau khi đăng nhập thành công, chuyển đến dashboard quản lý.
 
-2. Quản lý:
-   - CRUD mã bí mật, giải thưởng, tài khoản Admin/khách hàng.
+2. Quản lý hệ thống:
+   - CRUD tài khoản Admin, khách hàng, mã bí mật, giải thưởng.
+   - Tùy chỉnh tỷ lệ và giao diện vòng quay.
 
 3. Thống kê:
-   - Xem báo cáo chi tiết dưới dạng biểu đồ.
+   - Xem báo cáo dưới dạng biểu đồ chi tiết.
 
 ---
 
 4. Yêu cầu phi chức năng
 
 1. Bảo mật:
-- Helmet.js: Chống các lỗ hổng bảo mật XSS, CSRF.
-- Bcrypt: Mã hóa mật khẩu.
-- Cookie bảo mật: Sử dụng httpOnly, secure cookie để bảo vệ session khách hàng.
+   - Mã hóa mật khẩu bằng Bcrypt.
 
 2. Hiệu năng:
-- Caching: Redis cache để tăng tốc độ phản hồi.
-- Phân trang: Áp dụng phân trang khi hiển thị danh sách lớn (mã bí mật, khách hàng).
+   - Áp dụng phân trang khi hiển thị danh sách lớn (khách hàng).
 
 3. Trải nghiệm người dùng (UX):
-- Thông báo:
-  - Hiển thị thông báo rõ ràng khi có lỗi hoặc thành công (quay thưởng, đăng ký).
-- Google Analytics:
-  - Theo dõi hành vi người dùng để tối ưu hóa giao diện và tính năng.
+   - Hiển thị thông báo rõ ràng khi có lỗi hoặc thành công.
+
+5. Schema cơ sở dữ liệu SQLite cho hệ thống quay thưởng
+
+1. Bảng `customers` (Khách hàng)
+- `id` INTEGER: Khóa chính, tự động tăng
+- `full_name` TEXT: Họ tên khách hàng
+- `phone_number` TEXT: Số điện thoại (duy nhất)
+- `address` TEXT: Địa chỉ của khách hàng
+- `secret_code` TEXT: Mã bí mật cấp bởi Admin
+- `created_at` TIMESTAMP: Thời gian tạo tài khoản
+
+2. Bảng `admins` (Quản trị viên)
+- `id` INTEGER: Khóa chính, tự động tăng
+- `username` TEXT: Tên đăng nhập (duy nhất)
+- `password` TEXT: Mật khẩu (được mã hóa)
+- `created_at` TIMESTAMP: Thời gian tạo tài khoản
+
+3. Bảng `secret_codes` (Mã bí mật)
+- `id` INTEGER: Khóa chính, tự động tăng
+- `code` TEXT: Mã bí mật (duy nhất, format: SHxxxx)
+- `status` TEXT: Trạng thái: "Chưa dùng", "Đã dùng", "Hết hạn"
+- `expiration_date` TIMESTAMP: Ngày hết hạn của mã
+- `max_usage` INTEGER: Số lần sử dụng tối đa
+- `created_at` TIMESTAMP: Thời gian tạo mã
+
+4. Bảng `prizes` (Giải thưởng)
+- `id` INTEGER: Khóa chính, tự động tăng
+- `name` TEXT: Tên giải thưởng
+- `image_url` TEXT: URL hình ảnh giải thưởng
+- `quantity` INTEGER: Số lượng giải thưởng
+- `win_rate` REAL: Tỷ lệ trúng thưởng (giá trị từ 0 đến 1)
+- `created_at` TIMESTAMP: Thời gian tạo giải thưởng
+
+5. Bảng `spin_results` (Kết quả quay thưởng)
+- `id` INTEGER: Khóa chính, tự động tăng
+- `customer_id` INTEGER: ID khách hàng (khóa ngoại từ `customers`)
+- `prize_id` INTEGER: ID giải thưởng (khóa ngoại từ `prizes`)
+- `spin_time` TIMESTAMP: Thời gian quay thưởng
+
+6. Bảng `analytics` (Thống kê)
+- `id` INTEGER: Khóa chính, tự động tăng
+- `date` DATE: Ngày thống kê
+- `total_spins` INTEGER: Tổng số lượt quay trong ngày
+- `unique_customers` INTEGER: Số khách hàng tham gia trong ngày
