@@ -1,17 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import FormField from '../../components/common/FormField';
-import LoadingOverlay from '../../components/common/LoadingOverlay';
+import LoadingButton from '../../components/common/LoadingButton';
 import { useToast } from '../../contexts/ToastContext';
-import { useAuth } from '../../hooks/useAuth';
 import { useAuthStore } from '../../store/authStore';
-import { validateAdminLoginForm } from '../../utils/validation';
 
 function AdminLogin() {
   const navigate = useNavigate();
-  const { loading } = useAuth(false, true);
+  const { loading, adminLogin } = useAuthStore();
   const { showToast } = useToast();
-  const adminLogin = useAuthStore((state) => state.adminLogin);
 
   const [formData, setFormData] = useState({
     username: '',
@@ -32,63 +29,55 @@ function AdminLogin() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setErrors({});
-
-    const validationErrors = validateAdminLoginForm(formData);
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
-
     try {
       await adminLogin(formData);
-      showToast('Đăng nhập thành công', 'success');
       navigate('/admin/dashboard');
     } catch (error) {
-      showToast(error.response?.data?.error || 'Đăng nhập thất bại', 'error');
+      let message = error.response?.data?.error || error.message || 'Đăng nhập thất bại';
+      showToast(message, 'error');
     }
   };
 
   return (
-    <LoadingOverlay loading={loading}>
-      <div className="max-w-md mx-auto p-6">
-        <h1 className="text-2xl font-bold text-center mb-6">Admin Login</h1>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <FormField
-            label="Tên đăng nhập"
-            error={errors.username}
-            required
-            helpText="Tối thiểu 3 ký tự"
-          >
-            <input
-              type="text"
-              name="username"
-              value={formData.username}
-              onChange={handleChange}
-              className={`input ${errors.username ? 'border-red-500' : ''}`}
-              placeholder="Nhập tên đăng nhập"
-              autoComplete="username"
-            />
-          </FormField>
-
-          <FormField label="Mật khẩu" error={errors.password} required helpText="Tối thiểu 6 ký tự">
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              className={`input ${errors.password ? 'border-red-500' : ''}`}
-              placeholder="Nhập mật khẩu"
-              autoComplete="current-password"
-            />
-          </FormField>
-
-          <button type="submit" className="btn btn-primary w-full" disabled={loading}>
-            {loading ? 'Đang xử lý...' : 'Đăng nhập'}
-          </button>
-        </form>
+    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <h2 className="text-center text-3xl font-extrabold text-gray-900">Đăng nhập Admin</h2>
       </div>
-    </LoadingOverlay>
+
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <FormField label="Tên đăng nhập" error={errors.username} required>
+              <input
+                type="text"
+                name="username"
+                value={formData.username}
+                onChange={handleChange}
+                className={`input ${errors.username ? 'border-red-500' : ''}`}
+                placeholder="Nhập tên đăng nhập"
+                autoComplete="username"
+              />
+            </FormField>
+
+            <FormField label="Mật khẩu" error={errors.password} required>
+              <input
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                className={`input ${errors.password ? 'border-red-500' : ''}`}
+                placeholder="Nhập mật khẩu"
+                autoComplete="current-password"
+              />
+            </FormField>
+
+            <LoadingButton type="submit" loading={loading} className="btn-primary w-full">
+              Đăng nhập
+            </LoadingButton>
+          </form>
+        </div>
+      </div>
+    </div>
   );
 }
 

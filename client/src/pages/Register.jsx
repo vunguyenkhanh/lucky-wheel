@@ -1,117 +1,94 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import FormField from '../components/common/FormField';
-import LoadingOverlay from '../components/common/LoadingOverlay';
+import LoadingButton from '../components/common/LoadingButton';
 import { useToast } from '../contexts/ToastContext';
-import { useAuth } from '../hooks/useAuth';
 import { useAuthStore } from '../store/authStore';
-import { validateRegisterForm } from '../utils/validation';
 
 function Register() {
-  const { loading } = useAuth(false);
+  const navigate = useNavigate();
+  const { loading, register } = useAuthStore();
   const { showToast } = useToast();
+
   const [formData, setFormData] = useState({
-    fullName: '',
+    name: '',
     phoneNumber: '',
-    address: '',
+    secretCode: '',
   });
   const [errors, setErrors] = useState({});
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: '',
-      }));
-    }
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setErrors({}); // Clear all errors when submitting
-
-    // Validate form
-    const validationErrors = validateRegisterForm(formData);
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
-
     try {
-      await useAuthStore.getState().register(formData);
+      await register(formData);
       showToast('Đăng ký thành công', 'success');
-    } catch (err) {
-      const errorInfo = handleError(err);
-      setErrors({ submit: errorInfo.error });
-      showToast(errorInfo.error, 'error');
+      navigate('/login');
+    } catch (error) {
+      showToast(error.response?.data?.error || 'Đăng ký thất bại', 'error');
     }
   };
 
   return (
-    <LoadingOverlay loading={loading}>
-      <div className="max-w-md mx-auto p-6">
-        <h1 className="text-2xl font-bold text-center mb-6">Đăng Ký Tài Khoản</h1>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {errors.submit && (
-            <div className="bg-red-50 text-red-500 p-4 rounded-md">{errors.submit}</div>
-          )}
-
-          <FormField
-            label="Họ và tên"
-            error={errors.fullName}
-            required
-            helpText="Tối thiểu 2 ký tự"
-          >
-            <input
-              type="text"
-              name="fullName"
-              value={formData.fullName}
-              onChange={handleChange}
-              className={`input ${errors.fullName ? 'border-red-500' : ''}`}
-              placeholder="Nhập họ và tên"
-              autoComplete="name"
-            />
-          </FormField>
-
-          <FormField
-            label="Số điện thoại"
-            error={errors.phoneNumber}
-            required
-            helpText="Ví dụ: 0912345678"
-          >
-            <input
-              type="tel"
-              name="phoneNumber"
-              value={formData.phoneNumber}
-              onChange={handleChange}
-              className={`input ${errors.phoneNumber ? 'border-red-500' : ''}`}
-              placeholder="Nhập số điện thoại"
-              autoComplete="tel"
-            />
-          </FormField>
-
-          <FormField label="Địa chỉ" error={errors.address} required>
-            <textarea
-              name="address"
-              value={formData.address}
-              onChange={handleChange}
-              className={`input min-h-[80px] ${errors.address ? 'border-red-500' : ''}`}
-              placeholder="Nhập địa chỉ"
-              autoComplete="street-address"
-            />
-          </FormField>
-
-          <button type="submit" className="btn btn-primary w-full" disabled={loading}>
-            {loading ? 'Đang xử lý...' : 'Đăng ký'}
-          </button>
-        </form>
+    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <h2 className="text-center text-3xl font-extrabold text-gray-900">Đăng ký tài khoản</h2>
+        <p className="mt-2 text-center text-sm text-gray-600">
+          Đã có tài khoản?{' '}
+          <a href="/login" className="font-medium text-blue-600 hover:text-blue-500">
+            Đăng nhập ngay
+          </a>
+        </p>
       </div>
-    </LoadingOverlay>
+
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <FormField label="Họ và tên" error={errors.name} required>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                className={`input ${errors.name ? 'border-red-500' : ''}`}
+                placeholder="Nhập họ và tên"
+              />
+            </FormField>
+
+            <FormField label="Số điện thoại" error={errors.phoneNumber} required>
+              <input
+                type="tel"
+                name="phoneNumber"
+                value={formData.phoneNumber}
+                onChange={handleChange}
+                className={`input ${errors.phoneNumber ? 'border-red-500' : ''}`}
+                placeholder="Nhập số điện thoại"
+              />
+            </FormField>
+
+            <FormField label="Mã bí mật" error={errors.secretCode} required>
+              <input
+                type="text"
+                name="secretCode"
+                value={formData.secretCode}
+                onChange={handleChange}
+                className={`input ${errors.secretCode ? 'border-red-500' : ''}`}
+                placeholder="Nhập mã bí mật"
+              />
+            </FormField>
+
+            <LoadingButton type="submit" loading={loading} className="btn-primary w-full">
+              Đăng ký
+            </LoadingButton>
+          </form>
+        </div>
+      </div>
+    </div>
   );
 }
 

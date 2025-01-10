@@ -1,53 +1,27 @@
-import { cacheManager } from '../utils/cache';
-import { BaseService } from './baseService';
-import { socketService } from './socketService';
+import api from '../config/api';
 
-class PrizeService extends BaseService {
-  constructor() {
-    super('/prizes');
-  }
+export const prizeService = {
+  // Get all prizes
+  getPrizes: async () => {
+    const response = await api.get('/admin/prizes');
+    return response.data;
+  },
 
-  async getPrizes() {
-    // Check cache first
-    const cached = cacheManager.get('prizes');
-    if (cached) return cached;
+  // Create new prize
+  createPrize: async (data) => {
+    const response = await api.post('/admin/prizes', data);
+    return response.data;
+  },
 
-    // If not in cache, fetch from API
-    const prizes = await this.get();
+  // Update prize
+  updatePrize: async (id, data) => {
+    const response = await api.put(`/admin/prizes/${id}`, data);
+    return response.data;
+  },
 
-    // Store in cache
-    cacheManager.set('prizes', prizes);
-
-    return prizes;
-  }
-
-  async createPrize(data) {
-    const prize = await this.post(data);
-
-    // Invalidate cache
-    cacheManager.delete('prizes');
-
-    // Emit socket event
-    socketService.socket?.emit('prize:created', prize);
-
-    return prize;
-  }
-
-  async updatePrize(id, data) {
-    const prize = await this.put(id, data);
-
-    // Update cache
-    const cached = cacheManager.get('prizes');
-    if (cached) {
-      const updated = cached.map((p) => (p.id === id ? prize : p));
-      cacheManager.set('prizes', updated);
-    }
-
-    // Emit socket event
-    socketService.socket?.emit('prize:updated', prize);
-
-    return prize;
-  }
-}
-
-export const prizeService = new PrizeService();
+  // Delete prize
+  deletePrize: async (id) => {
+    const response = await api.delete(`/admin/prizes/${id}`);
+    return response.data;
+  },
+};

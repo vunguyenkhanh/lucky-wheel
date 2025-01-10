@@ -1,17 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import FormField from '../components/common/FormField';
-import LoadingOverlay from '../components/common/LoadingOverlay';
+import LoadingButton from '../components/common/LoadingButton';
 import { useToast } from '../contexts/ToastContext';
-import { useAuth } from '../hooks/useAuth';
 import { useAuthStore } from '../store/authStore';
-import { validateLoginForm } from '../utils/validation';
 
 function Login() {
   const navigate = useNavigate();
-  const { loading } = useAuth(false);
+  const { loading, login } = useAuthStore();
   const { showToast } = useToast();
-  const login = useAuthStore((state) => state.login);
 
   const [formData, setFormData] = useState({
     phoneNumber: '',
@@ -21,33 +18,14 @@ function Login() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: '',
-      }));
-    }
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setErrors({});
-
-    // Validate form
-    const validationErrors = validateLoginForm(formData);
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
-
     try {
       await login(formData);
-      showToast('Đăng nhập thành công', 'success');
       navigate('/wheel');
     } catch (error) {
       showToast(error.response?.data?.error || 'Đăng nhập thất bại', 'error');
@@ -55,49 +33,49 @@ function Login() {
   };
 
   return (
-    <LoadingOverlay loading={loading}>
-      <div className="max-w-md mx-auto p-6">
-        <h1 className="text-2xl font-bold text-center mb-6">Đăng Nhập</h1>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <FormField
-            label="Số điện thoại"
-            error={errors.phoneNumber}
-            required
-            helpText="Ví dụ: 0912345678"
-          >
-            <input
-              type="tel"
-              name="phoneNumber"
-              value={formData.phoneNumber}
-              onChange={handleChange}
-              className={`input ${errors.phoneNumber ? 'border-red-500' : ''}`}
-              placeholder="Nhập số điện thoại"
-            />
-          </FormField>
-
-          <FormField
-            label="Mã bí mật"
-            error={errors.secretCode}
-            required
-            helpText="Mã có dạng SHxxxx (x là số, ví dụ: SH1234)"
-          >
-            <input
-              type="text"
-              name="secretCode"
-              value={formData.secretCode}
-              onChange={handleChange}
-              className={`input ${errors.secretCode ? 'border-red-500' : ''}`}
-              placeholder="Nhập mã bí mật"
-              maxLength={6}
-            />
-          </FormField>
-
-          <button type="submit" className="btn btn-primary w-full" disabled={loading}>
-            {loading ? 'Đang xử lý...' : 'Đăng nhập'}
-          </button>
-        </form>
+    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <h2 className="text-center text-3xl font-extrabold text-gray-900">Đăng nhập</h2>
+        <p className="mt-2 text-center text-sm text-gray-600">
+          Hoặc{' '}
+          <a href="/register" className="font-medium text-blue-600 hover:text-blue-500">
+            đăng ký tài khoản mới
+          </a>
+        </p>
       </div>
-    </LoadingOverlay>
+
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <FormField label="Số điện thoại" error={errors.phoneNumber} required>
+              <input
+                type="tel"
+                name="phoneNumber"
+                value={formData.phoneNumber}
+                onChange={handleChange}
+                className={`input ${errors.phoneNumber ? 'border-red-500' : ''}`}
+                placeholder="Nhập số điện thoại"
+              />
+            </FormField>
+
+            <FormField label="Mã bí mật" error={errors.secretCode} required>
+              <input
+                type="text"
+                name="secretCode"
+                value={formData.secretCode}
+                onChange={handleChange}
+                className={`input ${errors.secretCode ? 'border-red-500' : ''}`}
+                placeholder="Nhập mã bí mật"
+              />
+            </FormField>
+
+            <LoadingButton type="submit" loading={loading} className="btn-primary w-full">
+              Đăng nhập
+            </LoadingButton>
+          </form>
+        </div>
+      </div>
+    </div>
   );
 }
 

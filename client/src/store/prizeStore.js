@@ -1,57 +1,56 @@
 import { create } from 'zustand';
-import { prizeService } from '../services';
+import { prizeService } from '../services/prizeService';
 
-export const usePrizeStore = create((set, get) => ({
-  // State
+export const usePrizeStore = create((set) => ({
   prizes: [],
-  currentPrize: null,
   loading: false,
   error: null,
 
-  // Actions
+  // Fetch prizes
   fetchPrizes: async () => {
-    set({ loading: true, error: null });
+    set({ loading: true });
     try {
-      const { prizes } = await prizeService.getPrizes();
-      set({ prizes, loading: false });
+      const data = await prizeService.getPrizes();
+      set({ prizes: data, loading: false });
     } catch (error) {
-      set({ error: error.response?.data?.error || 'Lỗi tải giải thưởng', loading: false });
-      throw error;
+      set({ error: error.message, loading: false });
+      console.error('Fetch prizes error:', error);
     }
   },
 
-  createPrize: async (data) => {
-    set({ loading: true, error: null });
+  // Add prize
+  addPrize: async (prizeData) => {
+    set({ loading: true });
     try {
-      const { prize } = await prizeService.createPrize(data);
+      const newPrize = await prizeService.createPrize(prizeData);
       set((state) => ({
-        prizes: [...state.prizes, prize],
+        prizes: [...state.prizes, newPrize],
         loading: false,
       }));
-      return prize;
     } catch (error) {
-      set({ error: error.response?.data?.error || 'Lỗi tạo giải thưởng', loading: false });
+      set({ error: error.message, loading: false });
       throw error;
     }
   },
 
-  updatePrize: async (id, data) => {
-    set({ loading: true, error: null });
+  // Update prize
+  updatePrize: async (id, prizeData) => {
+    set({ loading: true });
     try {
-      const { prize } = await prizeService.updatePrize(id, data);
+      const updatedPrize = await prizeService.updatePrize(id, prizeData);
       set((state) => ({
-        prizes: state.prizes.map((p) => (p.id === id ? prize : p)),
+        prizes: state.prizes.map((p) => (p.id === id ? updatedPrize : p)),
         loading: false,
       }));
-      return prize;
     } catch (error) {
-      set({ error: error.response?.data?.error || 'Lỗi cập nhật giải thưởng', loading: false });
+      set({ error: error.message, loading: false });
       throw error;
     }
   },
 
+  // Delete prize
   deletePrize: async (id) => {
-    set({ loading: true, error: null });
+    set({ loading: true });
     try {
       await prizeService.deletePrize(id);
       set((state) => ({
@@ -59,29 +58,8 @@ export const usePrizeStore = create((set, get) => ({
         loading: false,
       }));
     } catch (error) {
-      set({ error: error.response?.data?.error || 'Lỗi xóa giải thưởng', loading: false });
+      set({ error: error.message, loading: false });
       throw error;
     }
-  },
-
-  uploadImage: async (formData) => {
-    set({ loading: true, error: null });
-    try {
-      const { url } = await prizeService.uploadImage(formData);
-      set({ loading: false });
-      return url;
-    } catch (error) {
-      set({ error: error.response?.data?.error || 'Lỗi upload hình ảnh', loading: false });
-      throw error;
-    }
-  },
-
-  reset: () => {
-    set({
-      prizes: [],
-      currentPrize: null,
-      loading: false,
-      error: null,
-    });
   },
 }));

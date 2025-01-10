@@ -12,24 +12,39 @@ export const useAuthStore = create(
       loading: false,
       error: null,
 
+      // Admin actions
+      adminLogin: async (credentials) => {
+        set({ loading: true, error: null });
+        try {
+          const { token } = await authService.adminLogin(credentials);
+          localStorage.setItem('token', token);
+          set({ isAdmin: true, loading: false });
+        } catch (error) {
+          set({ error: error.message, loading: false });
+          throw error;
+        }
+      },
+
+      adminLogout: async () => {
+        try {
+          await authService.adminLogout();
+        } catch (error) {
+          console.error('Admin logout error:', error);
+        } finally {
+          localStorage.removeItem('token');
+          set({
+            isAdmin: false,
+            error: null,
+          });
+        }
+      },
+
       // Actions
       login: async (credentials) => {
         set({ loading: true, error: null });
         try {
           const { user, token } = await authService.login(credentials);
           set({ isAuthenticated: true, user, loading: false });
-          localStorage.setItem('token', token);
-        } catch (error) {
-          set({ error: error.response?.data?.error || 'Đăng nhập thất bại', loading: false });
-          throw error;
-        }
-      },
-
-      adminLogin: async (credentials) => {
-        set({ loading: true, error: null });
-        try {
-          const { token } = await authService.adminLogin(credentials);
-          set({ isAdmin: true, loading: false });
           localStorage.setItem('token', token);
         } catch (error) {
           set({ error: error.response?.data?.error || 'Đăng nhập thất bại', loading: false });
@@ -51,30 +66,14 @@ export const useAuthStore = create(
 
       logout: async () => {
         try {
-          // Gọi API logout để clear session/token ở server
           await authService.logout();
         } catch (error) {
           console.error('Logout error:', error);
         } finally {
-          // Clear local storage và state
           localStorage.removeItem('token');
           set({
             isAuthenticated: false,
             user: null,
-            error: null,
-          });
-        }
-      },
-
-      adminLogout: async () => {
-        try {
-          await authService.adminLogout();
-        } catch (error) {
-          console.error('Admin logout error:', error);
-        } finally {
-          localStorage.removeItem('token');
-          set({
-            isAdmin: false,
             error: null,
           });
         }
