@@ -1,90 +1,94 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import AsyncErrorBoundary from './components/error/AsyncErrorBoundary';
+import { ProtectedRoute, PublicRoute } from './components/route/RouteProtection';
 import { ToastProvider } from './contexts/ToastContext';
 import AdminLayout from './layouts/AdminLayout';
 import MainLayout from './layouts/MainLayout';
-import AdminManagement from './pages/admin/AdminManagement';
-import AdminDashboard from './pages/admin/Dashboard';
-import AdminLogin from './pages/admin/Login';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import NotFound from './pages/NotFound';
 import Register from './pages/Register';
 import Wheel from './pages/Wheel';
-import { useAuthStore } from './store/authStore';
+import AdminManagement from './pages/admin/AdminManagement';
+import AdminDashboard from './pages/admin/Dashboard';
+import AdminLogin from './pages/admin/Login';
 
-// Protected Route Component
-function ProtectedRoute({ children }) {
-  const { isAdmin } = useAuthStore();
-
-  if (!isAdmin) {
-    return <Navigate to="/admin/login" replace />;
-  }
-
-  return children;
-}
-
-// Public Route Component (redirect to dashboard if already logged in)
-function PublicRoute({ children }) {
-  const { isAdmin } = useAuthStore();
-
-  if (isAdmin) {
-    return <Navigate to="/admin/dashboard" replace />;
-  }
-
-  return children;
-}
-
-function App() {
-  return (
-    <BrowserRouter>
+const routes = [
+  {
+    element: (
       <ToastProvider>
         <AsyncErrorBoundary>
-          <Routes>
-            {/* Public Routes */}
-            <Route element={<MainLayout />}>
-              <Route path="/" element={<Home />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/wheel" element={<Wheel />} />
-            </Route>
-
-            {/* Admin Routes */}
-            <Route path="/admin" element={<AdminLayout />}>
-              <Route
-                path="login"
-                element={
-                  <PublicRoute>
-                    <AdminLogin />
-                  </PublicRoute>
-                }
-              />
-              <Route
-                path="dashboard"
-                element={
-                  <ProtectedRoute>
-                    <AdminDashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="admins"
-                element={
-                  <ProtectedRoute>
-                    <AdminManagement />
-                  </ProtectedRoute>
-                }
-              />
-              <Route index element={<Navigate to="dashboard" replace />} />
-            </Route>
-
-            {/* 404 */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <MainLayout />
         </AsyncErrorBoundary>
       </ToastProvider>
-    </BrowserRouter>
-  );
-}
+    ),
+    children: [
+      {
+        path: '/',
+        element: <Home />,
+      },
+      {
+        path: '/login',
+        element: <Login />,
+      },
+      {
+        path: '/register',
+        element: <Register />,
+      },
+      {
+        path: '/wheel',
+        element: <Wheel />,
+      },
+    ],
+  },
+  {
+    path: '/admin',
+    children: [
+      {
+        index: true,
+        element: <Navigate to="/admin/login" replace />,
+      },
+      {
+        element: (
+          <ToastProvider>
+            <AsyncErrorBoundary>
+              <AdminLayout />
+            </AsyncErrorBoundary>
+          </ToastProvider>
+        ),
+        children: [
+          {
+            path: 'login',
+            element: (
+              <PublicRoute>
+                <AdminLogin />
+              </PublicRoute>
+            ),
+          },
+          {
+            path: 'dashboard',
+            element: (
+              <ProtectedRoute>
+                <AdminDashboard />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: 'admins',
+            element: (
+              <ProtectedRoute>
+                <AdminManagement />
+              </ProtectedRoute>
+            ),
+          },
+        ],
+      },
+    ],
+  },
+  {
+    path: '*',
+    element: <NotFound />,
+  },
+];
 
-export default App;
+export default routes;
