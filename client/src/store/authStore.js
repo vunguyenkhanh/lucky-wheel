@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { authApi } from '../api/authApi';
-import { authService } from '../services';
 
 export const useAuthStore = create(
   persist(
@@ -18,8 +17,16 @@ export const useAuthStore = create(
       adminLogin: async (credentials, showToast) => {
         set({ loading: true, error: null });
         try {
-          const { token, message, user } = await authService.adminLogin(credentials);
-          localStorage.setItem('admin_token', token);
+          const { token, message, user } = await authApi.adminLogin(credentials);
+
+          // Reset customer state trước khi set admin state
+          set({
+            isAuthenticated: false,
+            isAdmin: false,
+            user: null,
+          });
+
+          // Set admin state
           set({
             isAdmin: true,
             isAuthenticated: true,
@@ -49,6 +56,14 @@ export const useAuthStore = create(
         set({ loading: true, error: null });
         try {
           const { message, user } = await authApi.customerAuth(credentials);
+
+          // Reset admin state trước khi set customer state
+          set({
+            isAdmin: false,
+            token: null,
+          });
+
+          // Set customer state
           set({
             isAuthenticated: true,
             isAdmin: false,
@@ -70,26 +85,8 @@ export const useAuthStore = create(
         }
       },
 
-      customerRegister: async (data, showToast) => {
-        set({ loading: true, error: null });
-        try {
-          const { message } = await authApi.customerRegister(data);
-          set({ loading: false });
-          showToast(message, 'success');
-          return { success: true };
-        } catch (error) {
-          set({
-            error: error.message,
-            loading: false,
-          });
-          showToast(error.message, 'error');
-          throw error;
-        }
-      },
-
       // Reset state
       reset: () => {
-        localStorage.removeItem('admin_token');
         set({
           isAuthenticated: false,
           isAdmin: false,
@@ -103,7 +100,7 @@ export const useAuthStore = create(
       // Logout actions
       adminLogout: async (showToast) => {
         try {
-          await authService.adminLogout();
+          await authApi.adminLogout();
           set({
             isAuthenticated: false,
             isAdmin: false,
@@ -121,15 +118,12 @@ export const useAuthStore = create(
             error: null,
             token: null,
           });
-          if (error.message !== 'Không tìm thấy token') {
-            showToast('Đã có lỗi xảy ra khi đăng xuất', 'error');
-          }
         }
       },
 
       customerLogout: async (showToast) => {
         try {
-          await authService.customerLogout();
+          await authApi.customerLogout();
           set({
             isAuthenticated: false,
             isAdmin: false,
@@ -139,14 +133,12 @@ export const useAuthStore = create(
           showToast('Đăng xuất thành công', 'success');
         } catch (error) {
           console.error('Customer logout error:', error);
-          showToast('Đã có lỗi xảy ra khi đăng xuất', 'error');
           set({
             isAuthenticated: false,
             isAdmin: false,
             user: null,
             error: null,
           });
-          throw error;
         }
       },
     }),

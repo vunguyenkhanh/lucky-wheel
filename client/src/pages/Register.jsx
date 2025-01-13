@@ -7,7 +7,7 @@ import { useAuthStore } from '../store/authStore';
 
 function Register() {
   const navigate = useNavigate();
-  const { loading } = useAuthStore();
+  const { loading, customerRegister } = useAuthStore();
   const { showToast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -103,18 +103,11 @@ function Register() {
     }
 
     try {
-      await authService.customerRegister(formData);
-      showToast(
-        'Đăng ký thành công! Vui lòng liên hệ Admin để nhận mã bí mật và đăng nhập.',
-        'success',
-      );
+      await customerRegister(formData, showToast);
+      showToast('Đăng ký thành công! Vui lòng liên hệ Admin để nhận mã bí mật.', 'success');
       navigate('/login');
     } catch (error) {
-      if (error.response?.status === 400) {
-        showToast(error.response.data.error, 'error');
-      } else {
-        showToast('Có lỗi xảy ra khi đăng ký. Vui lòng thử lại sau.', 'error');
-      }
+      console.error('Register error:', error);
     }
   };
 

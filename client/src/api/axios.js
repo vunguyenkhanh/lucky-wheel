@@ -1,30 +1,20 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
+  baseURL: 'http://localhost:3000/api',
   withCredentials: true,
 });
 
-// Add request interceptor
+// Thêm interceptor để tự động gắn token vào header cho admin requests
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
+    const token = localStorage.getItem('admin_token');
+    if (token && config.url.includes('/admin')) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  (error) => Promise.reject(error),
-);
-
-// Add response interceptor
-api.interceptors.response.use(
-  (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Clear local auth state
-      localStorage.removeItem('token');
-    }
     return Promise.reject(error);
   },
 );

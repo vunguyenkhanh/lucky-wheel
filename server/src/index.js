@@ -1,6 +1,8 @@
 import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
+import session from 'express-session';
+import { requestLogger } from './middleware/logging.js';
 import { apiLimiter } from './middleware/rateLimiter.js';
 import authRoutes from './routes/auth.js';
 import prizeRoutes from './routes/prize.js';
@@ -18,6 +20,7 @@ app.use(
   }),
 );
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Apply rate limiting to all routes
 app.use('/api', apiLimiter);
@@ -27,6 +30,21 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin/prizes', prizeRoutes);
 app.use('/api/prizes', prizeRoutes);
 app.use('/api/wheel', wheelRoutes);
+
+app.use(requestLogger);
+
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || 'your-secret-key',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === 'production',
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
+    },
+  }),
+);
 
 const PORT = process.env.PORT || 3000;
 

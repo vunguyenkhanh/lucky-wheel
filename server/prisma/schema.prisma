@@ -17,29 +17,29 @@ model Admin {
 
 model Customer {
   id          String         @id @default(uuid())
-  name        String         // Họ và tên
-  phoneNumber String         @unique  // Số điện thoại
-  address     String         // Địa chỉ
-  secretCode  String         @unique  // Mã bí mật được cấp bởi Admin
+  name        String
+  phoneNumber String         @unique
+  address     String
+  secretCode  SecretCode?
   histories   PrizeHistory[]
 }
 
 model SecretCode {
   id             String    @id @default(uuid())
-  code           String    @unique  // Format: SHxxxx
+  code           String    @unique
   status         String    // "Chưa dùng", "Đã dùng", "Hết hạn"
-  expirationDate DateTime  // Thời gian hết hạn
+  expirationDate DateTime
   customer       Customer? @relation(fields: [customerId], references: [id])
-  customerId     String?
+  customerId     String?   @unique
 }
 
 model Prize {
-  id          String         @id @default(uuid())
-  name        String
-  imageUrl    String
-  quantity    Int
-  winRate     Float
-  histories   PrizeHistory[]
+  id        String         @id @default(uuid())
+  name      String
+  imageUrl  String
+  quantity  Int
+  winRate   Float
+  histories PrizeHistory[]
 }
 
 model PrizeHistory {

@@ -8,10 +8,19 @@ CREATE TABLE "Admin" (
 -- CreateTable
 CREATE TABLE "Customer" (
     "id" TEXT NOT NULL PRIMARY KEY,
+    "name" TEXT NOT NULL,
     "phoneNumber" TEXT NOT NULL,
-    "password" TEXT NOT NULL,
-    "secretCode" TEXT NOT NULL,
-    "name" TEXT NOT NULL
+    "address" TEXT NOT NULL
+);
+
+-- CreateTable
+CREATE TABLE "SecretCode" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "code" TEXT NOT NULL,
+    "status" TEXT NOT NULL,
+    "expirationDate" DATETIME NOT NULL,
+    "customerId" TEXT,
+    CONSTRAINT "SecretCode_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "Customer" ("id") ON DELETE SET NULL ON UPDATE CASCADE
 );
 
 -- CreateTable
@@ -40,4 +49,7 @@ CREATE UNIQUE INDEX "Admin_username_key" ON "Admin"("username");
 CREATE UNIQUE INDEX "Customer_phoneNumber_key" ON "Customer"("phoneNumber");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Customer_secretCode_key" ON "Customer"("secretCode");
+CREATE UNIQUE INDEX "SecretCode_code_key" ON "SecretCode"("code");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "SecretCode_customerId_key" ON "SecretCode"("customerId");

@@ -34,11 +34,6 @@ export const adminLogin = async (req, res) => {
       });
     }
 
-    // Xóa session customer nếu có
-    if (req.session) {
-      req.session.destroy();
-    }
-
     const token = jwt.sign(
       {
         id: admin.id,
@@ -49,13 +44,12 @@ export const adminLogin = async (req, res) => {
       { expiresIn: '1d' },
     );
 
-    // Set token cho admin
-    res.cookie('admin_token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 24 * 60 * 60 * 1000,
-    });
+    // Xóa session customer nếu có
+    if (req.session) {
+      req.session.destroy((err) => {
+        if (err) console.error('Error destroying session:', err);
+      });
+    }
 
     return res.status(200).json({
       token,
@@ -76,9 +70,7 @@ export const adminLogin = async (req, res) => {
 
 export const adminLogout = async (req, res) => {
   try {
-    // Xóa cookie nếu có
     res.clearCookie('admin_token');
-
     return res.status(200).json({
       message: 'Đăng xuất thành công',
     });
@@ -92,9 +84,17 @@ export const adminLogout = async (req, res) => {
 
 export const customerLogout = async (req, res) => {
   try {
-    res.clearCookie('token');
-    return res.status(200).json({
-      message: 'Đăng xuất thành công',
+    // Xóa session
+    req.session.destroy((err) => {
+      if (err) {
+        console.error('Error destroying session:', err);
+        return res.status(500).json({
+          error: 'Có lỗi xảy ra khi đăng xuất',
+        });
+      }
+      return res.status(200).json({
+        message: 'Đăng xuất thành công',
+      });
     });
   } catch (error) {
     console.error('Customer logout error:', error);
@@ -111,7 +111,7 @@ export const customerAuth = async (req, res) => {
     // Validate input
     if (!phoneNumber || !secretCode) {
       return res.status(400).json({
-        error: 'Vui lòng nhập đầy đủ thông tin',
+        error: 'Vui lòng nhập đầy đủ số điện thoại và mã bí mật',
       });
     }
 
@@ -122,7 +122,7 @@ export const customerAuth = async (req, res) => {
 
     if (!customer) {
       return res.status(401).json({
-        error: 'Số điện thoại chưa được đăng ký',
+        error: 'Số điện thoại chưa được đăng ký. Vui lòng đăng ký trước khi đăng nhập.',
       });
     }
 
@@ -137,7 +137,7 @@ export const customerAuth = async (req, res) => {
 
     if (!validCode) {
       return res.status(401).json({
-        error: 'Mã bí mật không hợp lệ hoặc đã hết hạn',
+        error: 'Mã bí mật không hợp lệ hoặc đã hết hạn. Vui lòng liên hệ Admin để được cấp mã mới.',
       });
     }
 
@@ -149,6 +149,9 @@ export const customerAuth = async (req, res) => {
         customerId: customer.id,
       },
     });
+
+    // Xóa admin token nếu có
+    res.clearCookie('admin_token');
 
     // Set session cho customer
     req.session.customerId = customer.id;
@@ -166,7 +169,7 @@ export const customerAuth = async (req, res) => {
   } catch (error) {
     console.error('Customer auth error:', error);
     return res.status(500).json({
-      error: 'Có lỗi xảy ra khi đăng nhập',
+      error: 'Hệ thống đang gặp sự cố. Vui lòng thử lại sau.',
     });
   }
 };
@@ -201,6 +204,8 @@ export const customerRegister = async (req, res) => {
   try {
     const { name, phoneNumber, address } = req.body;
 
+    console.log('Register request:', { name, phoneNumber, address }); // Debug log
+
     // Validate input
     if (!name || !phoneNumber || !address) {
       return res.status(400).json({
@@ -222,20 +227,22 @@ export const customerRegister = async (req, res) => {
     // Tạo customer mới
     const customer = await prisma.customer.create({
       data: {
-        name,
-        phoneNumber,
-        address,
+        name: name.trim(),
+        phoneNumber: phoneNumber.trim(),
+        address: address.trim(),
       },
     });
+
+    console.log('Created customer:', customer); // Debug log
 
     return res.status(201).json({
       message: 'Đăng ký thành công',
       customer,
     });
   } catch (error) {
-    console.error('Customer register error:', error);
+    console.error('Customer register error:', error); // Chi tiết lỗi
     return res.status(500).json({
-      error: 'Có lỗi xảy ra khi đăng ký',
+      error: 'Có lỗi xảy ra khi đăng ký. Vui lòng thử lại sau.',
     });
   }
 };
