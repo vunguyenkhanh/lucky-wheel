@@ -16,21 +16,29 @@ model Admin {
 }
 
 model Customer {
-  id          String         @id @default(uuid())
-  name        String
-  phoneNumber String         @unique
-  address     String
-  secretCode  SecretCode?
-  histories   PrizeHistory[]
+  id           String      @id @default(uuid())
+  name         String // Tên khách hàng
+  phoneNumber  String      @unique // Số điện thoại
+  secretCode   SecretCode? @relation(fields: [secretCodeId], references: [id])
+  secretCodeId String?     @unique // ID của mã bí mật đã sử dụng
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  histories    PrizeHistory[] // Thêm quan hệ với PrizeHistory
+
+  @@map("customers")
 }
 
 model SecretCode {
   id             String    @id @default(uuid())
-  code           String    @unique
-  status         String    // "Chưa dùng", "Đã dùng", "Hết hạn"
-  expirationDate DateTime
-  customer       Customer? @relation(fields: [customerId], references: [id])
-  customerId     String?   @unique
+  code           String    @unique // Mã bí mật format SHxxxx
+  status         String    @default("Chưa dùng") // Trạng thái: Chưa dùng, Đã dùng, Hết hạn
+  expirationDate DateTime  // Thời gian hết hạn
+  usageCount     Int       @default(0) // Số lần sử dụng
+  createdAt      DateTime  @default(now()) // Thời gian tạo mã
+  updatedAt      DateTime  @updatedAt // Thời gian cập nhật gần nhất
+  customer       Customer? // Quan hệ với khách hàng (nếu đã sử dụng)
+
+  @@map("secret_codes")
 }
 
 model Prize {
@@ -39,7 +47,9 @@ model Prize {
   imageUrl  String
   quantity  Int
   winRate   Float
-  histories PrizeHistory[]
+  histories PrizeHistory[] // Quan hệ với PrizeHistory
+
+  @@map("prizes")
 }
 
 model PrizeHistory {
@@ -49,4 +59,6 @@ model PrizeHistory {
   prize      Prize    @relation(fields: [prizeId], references: [id])
   prizeId    String
   spinTime   DateTime @default(now())
+
+  @@map("prize_histories")
 }
