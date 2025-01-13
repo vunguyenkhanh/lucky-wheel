@@ -1,4 +1,5 @@
 import { Navigate } from 'react-router-dom';
+import LuckyWheel from './components/LuckyWheel';
 import AsyncErrorBoundary from './components/error/AsyncErrorBoundary';
 import { ProtectedRoute, PublicRoute } from './components/route/RouteProtection';
 import { ToastProvider } from './contexts/ToastContext';
@@ -8,10 +9,10 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import NotFound from './pages/NotFound';
 import Register from './pages/Register';
-import Wheel from './pages/Wheel';
 import AdminManagement from './pages/admin/AdminManagement';
 import AdminDashboard from './pages/admin/Dashboard';
 import AdminLogin from './pages/admin/Login';
+import PrizeManagement from './pages/admin/PrizeManagement';
 import SecretCodeManagement from './pages/admin/SecretCodeManagement';
 import { useAuthStore } from './store/authStore';
 
@@ -50,9 +51,9 @@ export const routes = [
       {
         path: '/wheel',
         element: (
-          <CustomerRoute>
-            <Wheel />
-          </CustomerRoute>
+          <ProtectedRoute>
+            <LuckyWheel />
+          </ProtectedRoute>
         ),
       },
     ],
@@ -102,6 +103,14 @@ export const routes = [
             element: (
               <ProtectedRoute>
                 <SecretCodeManagement />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: 'prizes',
+            element: (
+              <ProtectedRoute>
+                <PrizeManagement />
               </ProtectedRoute>
             ),
           },

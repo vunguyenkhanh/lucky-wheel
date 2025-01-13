@@ -1,134 +1,174 @@
+import { PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
-import { useToast } from '../../contexts/ToastContext';
-import { usePrizeStore } from '../../store/prizeStore';
+import { FaPlus } from 'react-icons/fa';
+import { toast } from 'react-toastify';
+import PrizeForm from '../../components/admin/PrizeForm';
+import Modal from '../../components/common/Modal';
+import { useAdminStore } from '../../store/adminStore';
 
-function PrizeManagement() {
-  const { prizes, loading, error, fetchPrizes, deletePrize } = usePrizeStore();
-  const [searchTerm, setSearchTerm] = useState('');
-  const { showToast } = useToast();
+const PrizeManagement = () => {
+  const { prizes, loading, loadPrizes, deletePrize } = useAdminStore();
+  const [showModal, setShowModal] = useState(false);
+  const [selectedPrize, setSelectedPrize] = useState(null);
 
   useEffect(() => {
-    fetchPrizes(showToast);
-  }, [fetchPrizes, showToast]);
+    loadPrizes();
+  }, [loadPrizes]);
 
   const handleDelete = async (id) => {
     if (window.confirm('Bạn có chắc chắn muốn xóa giải thưởng này?')) {
       try {
-        await deletePrize(id, showToast);
+        await deletePrize(id);
+        toast.success('Xóa giải thưởng thành công');
       } catch (error) {
-        console.error('Delete prize error:', error);
+        toast.error(error.response?.data?.error || 'Có lỗi xảy ra khi xóa');
       }
     }
   };
 
-  if (loading) return <LoadingSpinner />;
-  if (error) return <div className="text-center text-red-500">{error}</div>;
-
-  const filteredPrizes = prizes?.filter((prize) =>
-    prize.name.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
-
   return (
-    <div className="space-y-8">
+    <div className="container mx-auto px-4 py-8">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Quản Lý Giải Thưởng</h2>
+          <h1 className="text-2xl font-bold text-gray-900">Quản lý giải thưởng</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Thêm, sửa, xóa các giải thưởng trong hệ thống
+            Quản lý danh sách giải thưởng và tỷ lệ trúng thưởng
           </p>
         </div>
-        <Link
-          to="/admin/prizes/new"
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+        <button
+          onClick={() => {
+            setShowModal(true);
+            setSelectedPrize(null);
+          }}
+          className="btn btn-primary flex items-center gap-2"
+          disabled={loading}
         >
-          Thêm Giải Thưởng
-        </Link>
+          <FaPlus /> Thêm giải thưởng
+        </button>
       </div>
 
-      {/* Search */}
-      <div className="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm">
-        <input
-          type="text"
-          placeholder="Tìm kiếm giải thưởng..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+      {/* Thống kê */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="bg-green-50 p-4 rounded-lg">
+          <h3 className="text-sm font-medium text-green-800">Tổng giải thưởng</h3>
+          <p className="text-2xl font-semibold text-green-900">{prizes.length}</p>
+        </div>
+        <div className="bg-blue-50 p-4 rounded-lg">
+          <h3 className="text-sm font-medium text-blue-800">Tổng số lượng</h3>
+          <p className="text-2xl font-semibold text-blue-900">
+            {prizes.reduce((sum, prize) => sum + prize.quantity, 0)}
+          </p>
+        </div>
+        <div className="bg-yellow-50 p-4 rounded-lg">
+          <h3 className="text-sm font-medium text-yellow-800">Đã trúng thưởng</h3>
+          <p className="text-2xl font-semibold text-yellow-900">
+            {prizes.reduce((sum, prize) => sum + (prize.spinCount || 0), 0)}
+          </p>
+        </div>
       </div>
 
-      {/* Prize List */}
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Tên giải thưởng
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Số lượng
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Tỷ lệ trúng
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Trạng thái
-              </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Thao tác
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {filteredPrizes?.map((prize) => (
-              <tr key={prize.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center">
-                    <span className="text-2xl mr-3">🎁</span>
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">{prize.name}</div>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">{prize.quantity}</div>
-                  <div className="text-sm text-gray-500">/ {prize.initialQuantity}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">{(prize.winRate * 100).toFixed(1)}%</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span
-                    className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      prize.quantity > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}
-                  >
-                    {prize.quantity > 0 ? 'Còn quà' : 'Hết quà'}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <Link
-                    to={`/admin/prizes/${prize.id}/edit`}
-                    className="text-blue-600 hover:text-blue-900 mr-4"
-                  >
-                    Sửa
-                  </Link>
-                  <button
-                    onClick={() => handleDelete(prize.id)}
-                    className="text-red-600 hover:text-red-900"
-                  >
-                    Xóa
-                  </button>
-                </td>
+      {/* Danh sách giải thưởng */}
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  STT
+                </th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Tên giải thưởng
+                </th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Hình ảnh
+                </th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Số lượng
+                </th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Tỷ lệ trúng
+                </th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Đã trúng
+                </th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Thao tác
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {prizes.map((prize, index) => (
+                <tr key={prize.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                    {index + 1}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
+                    {prize.name}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-center">
+                    <div className="flex justify-center">
+                      <img
+                        src={prize.imageUrl}
+                        alt={prize.name}
+                        className="h-10 w-10 object-cover rounded"
+                      />
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                    {prize.quantity}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                    {(prize.winRate * 100).toFixed(1)}%
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                    {prize.spinCount || 0}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-center">
+                    <div className="flex justify-center space-x-2">
+                      <button
+                        onClick={() => {
+                          setShowModal(true);
+                          setSelectedPrize(prize);
+                        }}
+                        className="text-indigo-600 hover:text-indigo-900"
+                      >
+                        <PencilSquareIcon className="h-5 w-5" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(prize.id)}
+                        className="text-red-600 hover:text-red-900"
+                      >
+                        <TrashIcon className="h-5 w-5" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
+
+      {/* Modal */}
+      <Modal
+        isOpen={showModal}
+        onClose={() => {
+          setShowModal(false);
+          setSelectedPrize(null);
+        }}
+        title={selectedPrize ? 'Sửa giải thưởng' : 'Thêm giải thưởng'}
+      >
+        <PrizeForm
+          prize={selectedPrize}
+          onClose={() => {
+            setShowModal(false);
+            setSelectedPrize(null);
+          }}
+        />
+      </Modal>
     </div>
   );
-}
+};
 
 export default PrizeManagement;

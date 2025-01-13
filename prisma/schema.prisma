@@ -52,6 +52,9 @@ model SpinResult {
   spinTime   DateTime @default(now())
   customer   Customer @relation(fields: [customerId], references: [id])
   prize      Prize    @relation(fields: [prizeId], references: [id])
+
+  @@index([customerId])
+  @@index([prizeId])
 }
 
 model WheelConfig {

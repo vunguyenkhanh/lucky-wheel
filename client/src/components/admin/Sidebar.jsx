@@ -1,3 +1,4 @@
+import { GiftIcon } from '@heroicons/react/24/outline';
 import { Link, useLocation } from 'react-router-dom';
 
 function Sidebar() {
@@ -18,6 +19,11 @@ function Sidebar() {
       path: '/admin/admins',
       label: 'Quản lý Admin',
       icon: '👥',
+    },
+    {
+      path: '/admin/prizes',
+      label: 'Quản lý giải thưởng',
+      icon: <GiftIcon className="w-6 h-6" />,
     },
   ];
 

@@ -1,5 +1,6 @@
+import { PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { useEffect, useState } from 'react';
-import { FaEdit, FaPlus, FaTrash } from 'react-icons/fa';
+import { FaPlus } from 'react-icons/fa';
 import { secretCodeApi } from '../../api/secretCodeApi';
 import CountdownTimer from '../../components/common/CountdownTimer';
 import LoadingButton from '../../components/common/LoadingButton';
@@ -340,7 +341,7 @@ function SecretCodeManagement() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                     {index + 1}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap font-medium text-center">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
                     {code.code}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-center">
@@ -356,7 +357,7 @@ function SecretCodeManagement() {
                       {code.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-center">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                     {new Date(code.expirationDate).toLocaleString('vi-VN', {
                       hour: '2-digit',
                       minute: '2-digit',
@@ -373,26 +374,25 @@ function SecretCodeManagement() {
                       />
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-center">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                     {code.usageCount || 0}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
-                    <div className="flex justify-center gap-2">
+                  <td className="px-6 py-4 whitespace-nowrap text-center">
+                    <div className="flex justify-center space-x-2">
                       <button
-                        onClick={() => handleSelectCode(code)}
-                        className="text-indigo-600 hover:text-indigo-900 disabled:opacity-50"
-                        disabled={code.status === 'Đã dùng'}
-                        title={code.status === 'Đã dùng' ? 'Không thể sửa mã đã sử dụng' : ''}
+                        onClick={() => {
+                          setShowModal(true);
+                          setSelectedCode(code);
+                        }}
+                        className="text-indigo-600 hover:text-indigo-900"
                       >
-                        <FaEdit />
+                        <PencilSquareIcon className="h-5 w-5" />
                       </button>
                       <button
                         onClick={() => handleDelete(code.id)}
-                        className="text-red-600 hover:text-red-900 disabled:opacity-50"
-                        disabled={code.status === 'Đã dùng'}
-                        title={code.status === 'Đã dùng' ? 'Không thể xóa mã đã sử dụng' : ''}
+                        className="text-red-600 hover:text-red-900"
                       >
-                        <FaTrash />
+                        <TrashIcon className="h-5 w-5" />
                       </button>
                     </div>
                   </td>

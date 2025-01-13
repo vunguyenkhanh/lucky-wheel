@@ -1,6 +1,16 @@
-import api from './axios';
+import axios from './axiosClient';
 
-export const wheelApi = {
-  getPrizes: () => api.get('/prizes'),
-  spin: () => api.post('/prizes/spin'),
+export const getWheelConfig = async () => {
+  const response = await axios.get('/wheel/config');
+  return response.data;
+};
+
+export const spin = async () => {
+  const response = await axios.post('/wheel/spin');
+  return response.data;
+};
+
+export const getSpinHistory = async () => {
+  const response = await axios.get('/wheel/history');
+  return response.data;
 };

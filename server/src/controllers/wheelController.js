@@ -6,7 +6,19 @@ const prisma = new PrismaClient();
 export const getWheelConfig = async (req, res) => {
   try {
     const config = await prisma.wheelConfig.findFirst();
-    return res.json(config);
+    const prizes = await prisma.prize.findMany({
+      where: {
+        quantity: { gt: 0 }, // Chỉ lấy giải thưởng còn số lượng
+      },
+      orderBy: {
+        winRate: 'desc',
+      },
+    });
+
+    return res.json({
+      config,
+      prizes,
+    });
   } catch (error) {
     console.error('Get wheel config error:', error);
     return res.status(500).json({ error: 'Lỗi lấy cấu hình vòng quay' });
@@ -51,7 +63,7 @@ export const spin = async (req, res) => {
       return res.status(400).json({ error: 'Bạn đã sử dụng lượt quay' });
     }
 
-    // Lấy tất cả giải thưởng còn số lượng
+    // Lấy danh sách giải thưởng còn số lượng
     const availablePrizes = await prisma.prize.findMany({
       where: {
         quantity: { gt: 0 },
@@ -110,13 +122,39 @@ export const spin = async (req, res) => {
       };
     });
 
+    // Tính index của giải thưởng để animation quay đến đúng vị trí
+    const prizeIndex = availablePrizes.findIndex((p) => p.id === selectedPrize.id);
+
     return res.json({
       message: 'Quay thưởng thành công',
       prize: result.prize,
       spinResult: result.spinResult,
+      prizeIndex,
     });
   } catch (error) {
     console.error('Spin error:', error);
     return res.status(500).json({ error: 'Lỗi quay thưởng' });
+  }
+};
+
+// Lấy lịch sử quay thưởng
+export const getSpinHistory = async (req, res) => {
+  try {
+    const customerId = req.session.customerId;
+
+    const history = await prisma.spinResult.findMany({
+      where: { customerId },
+      include: {
+        prize: true,
+      },
+      orderBy: {
+        spinTime: 'desc',
+      },
+    });
+
+    return res.json(history);
+  } catch (error) {
+    console.error('Get spin history error:', error);
+    return res.status(500).json({ error: 'Lỗi lấy lịch sử quay thưởng' });
   }
 };
