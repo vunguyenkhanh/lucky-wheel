@@ -12,6 +12,17 @@ import Wheel from './pages/Wheel';
 import AdminManagement from './pages/admin/AdminManagement';
 import AdminDashboard from './pages/admin/Dashboard';
 import AdminLogin from './pages/admin/Login';
+import { useAuthStore } from './store/authStore';
+
+const CustomerRoute = ({ children }) => {
+  const { isAuthenticated, isAdmin } = useAuthStore();
+
+  if (!isAuthenticated || isAdmin) {
+    return <Navigate to="/login" />;
+  }
+
+  return children;
+};
 
 const routes = [
   {
@@ -37,7 +48,11 @@ const routes = [
       },
       {
         path: '/wheel',
-        element: <Wheel />,
+        element: (
+          <CustomerRoute>
+            <Wheel />
+          </CustomerRoute>
+        ),
       },
     ],
   },

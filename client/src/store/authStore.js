@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { authApi } from '../api/authApi';
 import { authService } from '../services';
 
 export const useAuthStore = create(
@@ -47,12 +48,12 @@ export const useAuthStore = create(
       customerLogin: async (credentials, showToast) => {
         set({ loading: true, error: null });
         try {
-          const { message, user } = await authService.customerAuth(credentials);
+          const { message, user } = await authApi.customerAuth(credentials);
           set({
-            isAdmin: false,
             isAuthenticated: true,
-            loading: false,
+            isAdmin: false,
             user: { ...user, role: 'customer' },
+            loading: false,
             error: null,
           });
           showToast(message, 'success');
@@ -61,9 +62,25 @@ export const useAuthStore = create(
           set({
             error: error.message,
             loading: false,
-            isAdmin: false,
             isAuthenticated: false,
             user: null,
+          });
+          showToast(error.message, 'error');
+          throw error;
+        }
+      },
+
+      customerRegister: async (data, showToast) => {
+        set({ loading: true, error: null });
+        try {
+          const { message } = await authApi.customerRegister(data);
+          set({ loading: false });
+          showToast(message, 'success');
+          return { success: true };
+        } catch (error) {
+          set({
+            error: error.message,
+            loading: false,
           });
           showToast(error.message, 'error');
           throw error;

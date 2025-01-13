@@ -108,14 +108,25 @@ export const customerAuth = async (req, res) => {
   try {
     const { phoneNumber, secretCode } = req.body;
 
+    // Validate input
+    if (!phoneNumber || !secretCode) {
+      return res.status(400).json({
+        error: 'Vui lòng nhập đầy đủ thông tin',
+      });
+    }
+
+    // Kiểm tra customer
     const customer = await prisma.customer.findUnique({
       where: { phoneNumber },
     });
 
     if (!customer) {
-      return res.status(404).json({ error: 'Không tìm thấy khách hàng' });
+      return res.status(401).json({
+        error: 'Số điện thoại chưa được đăng ký',
+      });
     }
 
+    // Kiểm tra mã bí mật
     const validCode = await prisma.secretCode.findFirst({
       where: {
         code: secretCode,
@@ -125,33 +136,38 @@ export const customerAuth = async (req, res) => {
     });
 
     if (!validCode) {
-      return res.status(401).json({ error: 'Mã bí mật không hợp lệ hoặc đã hết hạn' });
+      return res.status(401).json({
+        error: 'Mã bí mật không hợp lệ hoặc đã hết hạn',
+      });
     }
 
     // Cập nhật trạng thái mã
     await prisma.secretCode.update({
       where: { id: validCode.id },
-      data: { status: 'Đã dùng' },
+      data: {
+        status: 'Đã dùng',
+        customerId: customer.id,
+      },
     });
-
-    // Xóa token admin nếu có
-    res.clearCookie('admin_token');
 
     // Set session cho customer
     req.session.customerId = customer.id;
     req.session.role = 'customer';
 
     return res.status(200).json({
-      message: 'Xác thực thành công',
+      message: 'Đăng nhập thành công',
       user: {
         id: customer.id,
+        name: customer.name,
         phoneNumber: customer.phoneNumber,
         role: 'customer',
       },
     });
   } catch (error) {
     console.error('Customer auth error:', error);
-    res.status(500).json({ error: 'Lỗi xác thực' });
+    return res.status(500).json({
+      error: 'Có lỗi xảy ra khi đăng nhập',
+    });
   }
 };
 
@@ -178,5 +194,48 @@ export const checkSecretCode = async (req, res) => {
     res.json({ valid: true });
   } catch (error) {
     res.status(500).json({ error: 'Lỗi kiểm tra mã' });
+  }
+};
+
+export const customerRegister = async (req, res) => {
+  try {
+    const { name, phoneNumber, address } = req.body;
+
+    // Validate input
+    if (!name || !phoneNumber || !address) {
+      return res.status(400).json({
+        error: 'Vui lòng nhập đầy đủ thông tin',
+      });
+    }
+
+    // Kiểm tra số điện thoại đã tồn tại
+    const existingCustomer = await prisma.customer.findUnique({
+      where: { phoneNumber },
+    });
+
+    if (existingCustomer) {
+      return res.status(400).json({
+        error: 'Số điện thoại đã được đăng ký',
+      });
+    }
+
+    // Tạo customer mới
+    const customer = await prisma.customer.create({
+      data: {
+        name,
+        phoneNumber,
+        address,
+      },
+    });
+
+    return res.status(201).json({
+      message: 'Đăng ký thành công',
+      customer,
+    });
+  } catch (error) {
+    console.error('Customer register error:', error);
+    return res.status(500).json({
+      error: 'Có lỗi xảy ra khi đăng ký',
+    });
   }
 };

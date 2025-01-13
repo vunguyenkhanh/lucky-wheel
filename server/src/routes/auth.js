@@ -4,6 +4,7 @@ import {
   adminLogout,
   customerAuth,
   customerLogout,
+  customerRegister,
 } from '../controllers/authController.js';
 import { authenticateAdmin, authenticateCustomer } from '../middleware/auth.js';
 import { loginLimiter } from '../middleware/rateLimiter.js';
@@ -15,6 +16,7 @@ router.post('/admin/login', loginLimiter, adminLogin);
 router.post('/admin/logout', authenticateAdmin, adminLogout);
 
 // Customer routes (sử dụng session)
+router.post('/customer/register', customerRegister);
 router.post('/customer/auth', customerAuth);
 router.post('/customer/logout', authenticateCustomer, customerLogout);
 
