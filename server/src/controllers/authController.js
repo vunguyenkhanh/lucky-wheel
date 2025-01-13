@@ -8,27 +8,95 @@ export const adminLogin = async (req, res) => {
   try {
     const { username, password } = req.body;
 
+    // Validate input
+    if (!username || !password) {
+      return res.status(400).json({
+        error: 'Vui lòng nhập đầy đủ thông tin đăng nhập',
+      });
+    }
+
+    // Kiểm tra admin trong database
     const admin = await prisma.admin.findUnique({
       where: { username },
     });
 
-    if (!admin || !(await bcrypt.compare(password, admin.password))) {
-      return res.status(401).json({ error: 'Thông tin đăng nhập không chính xác' });
+    if (!admin) {
+      return res.status(401).json({
+        error: 'Tài khoản admin không tồn tại',
+      });
     }
 
-    const token = jwt.sign({ id: admin.id }, process.env.JWT_SECRET, {
-      expiresIn: '1d',
-    });
+    // Kiểm tra mật khẩu
+    const isValidPassword = await bcrypt.compare(password, admin.password);
+    if (!isValidPassword) {
+      return res.status(401).json({
+        error: 'Mật khẩu không chính xác',
+      });
+    }
 
-    res.cookie('token', token, {
+    // Tạo token
+    const token = jwt.sign(
+      {
+        id: admin.id,
+        username: admin.username,
+        role: 'admin',
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '1d' },
+    );
+
+    // Set cookie
+    res.cookie('admin_token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
       maxAge: 24 * 60 * 60 * 1000, // 1 day
     });
 
-    res.json({ message: 'Đăng nhập thành công' });
+    // Trả về response thành công
+    return res.status(200).json({
+      token,
+      message: 'Đăng nhập thành công',
+      user: {
+        id: admin.id,
+        username: admin.username,
+      },
+    });
   } catch (error) {
-    res.status(500).json({ error: 'Lỗi đăng nhập' });
+    console.error('Admin login error:', error);
+    return res.status(500).json({
+      error: 'Hệ thống đang gặp sự cố. Vui lòng thử lại sau.',
+    });
+  }
+};
+
+export const adminLogout = async (req, res) => {
+  try {
+    // Xóa cookie nếu có
+    res.clearCookie('admin_token');
+
+    return res.status(200).json({
+      message: 'Đăng xuất thành công',
+    });
+  } catch (error) {
+    console.error('Admin logout error:', error);
+    return res.status(500).json({
+      error: 'Có lỗi xảy ra khi đăng xuất',
+    });
+  }
+};
+
+export const customerLogout = async (req, res) => {
+  try {
+    res.clearCookie('token');
+    return res.status(200).json({
+      message: 'Đăng xuất thành công',
+    });
+  } catch (error) {
+    console.error('Customer logout error:', error);
+    return res.status(500).json({
+      error: 'Có lỗi xảy ra khi đăng xuất',
+    });
   }
 };
 
@@ -95,14 +163,4 @@ export const checkSecretCode = async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: 'Lỗi kiểm tra mã' });
   }
-};
-
-export const customerLogout = (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      return res.status(500).json({ error: 'Lỗi đăng xuất' });
-    }
-    res.clearCookie('connect.sid');
-    res.json({ message: 'Đăng xuất thành công' });
-  });
 };

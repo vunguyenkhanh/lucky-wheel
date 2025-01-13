@@ -8,7 +8,7 @@ import { validateAdminLoginForm } from '../../utils/validation';
 
 function AdminLogin() {
   const navigate = useNavigate();
-  const { loading, adminLogin } = useAuthStore();
+  const { loading, adminLogin, setLoading } = useAuthStore();
   const { showToast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -59,15 +59,9 @@ function AdminLogin() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate tất cả fields khi submit
     const validationErrors = validateAdminLoginForm(formData);
     setErrors(validationErrors);
-
-    // Set tất cả fields là đã chạm vào
-    setTouched({
-      username: true,
-      password: true,
-    });
+    setTouched({ username: true, password: true });
 
     if (Object.keys(validationErrors).length > 0) {
       showToast('Vui lòng nhập đầy đủ thông tin', 'error');
@@ -78,6 +72,7 @@ function AdminLogin() {
       await adminLogin(formData, showToast);
       navigate('/admin/dashboard');
     } catch (error) {
+      // Toast đã được xử lý trong adminLogin
       console.error('Login error:', error);
     }
   };

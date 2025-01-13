@@ -57,31 +57,21 @@ export const authenticateToken = async (req, res, next) => {
 export const authenticateAdmin = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
-    const token = authHeader?.split(' ')[1];
-
-    if (!token) {
+    if (!authHeader?.startsWith('Bearer ')) {
       return res.status(401).json({ error: 'Không tìm thấy token' });
     }
 
+    const token = authHeader.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ error: 'Token không hợp lệ' });
+    }
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    if (!decoded.adminId) {
-      return res.status(401).json({ error: 'Không có quyền admin' });
-    }
-
-    // Kiểm tra admin trong database
-    const admin = await prisma.admin.findUnique({
-      where: { id: decoded.adminId },
-    });
-
-    if (!admin) {
-      return res.status(401).json({ error: 'Admin không tồn tại' });
-    }
-
-    req.admin = admin;
+    req.admin = decoded;
     next();
   } catch (error) {
-    return res.status(401).json({ error: 'Token không hợp lệ' });
+    console.error('Auth middleware error:', error);
+    return res.status(401).json({ error: 'Token không hợp lệ hoặc đã hết hạn' });
   }
 };
 

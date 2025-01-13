@@ -26,11 +26,13 @@ export const authService = {
       const response = await api.post('/auth/admin/login', credentials);
       return response.data;
     } catch (error) {
-      if (error.response?.status === 429) {
-        throw new Error('Quá nhiều lần đăng nhập thất bại. Vui lòng thử lại sau.');
+      if (error.response?.status === 401) {
+        throw new Error(error.response.data?.error || 'Thông tin đăng nhập không chính xác');
       }
-      console.error('Admin login error:', error);
-      throw error;
+      if (error.response?.status === 400) {
+        throw new Error(error.response.data?.error || 'Vui lòng kiểm tra lại thông tin đăng nhập');
+      }
+      throw new Error('Hệ thống đang gặp sự cố. Vui lòng thử lại sau.');
     }
   },
 
@@ -38,7 +40,7 @@ export const authService = {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
-        throw new Error('No token found');
+        throw new Error('Không tìm thấy token');
       }
 
       await api.post('/auth/admin/logout', null, {
