@@ -42,7 +42,6 @@ export const authApi = {
   checkSecretCode: (code) => api.get(`/auth/secret-codes/check/${code}`),
   customerRegister: async (data) => {
     try {
-      console.log('Sending register request:', data); // Debug log
       const response = await api.post('/auth/customer/register', data);
       return response.data;
     } catch (error) {

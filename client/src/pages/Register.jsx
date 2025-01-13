@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { authApi } from '../api/authApi';
 import FormField from '../components/common/FormField';
 import LoadingButton from '../components/common/LoadingButton';
 import { useToast } from '../contexts/ToastContext';
@@ -7,7 +8,7 @@ import { useAuthStore } from '../store/authStore';
 
 function Register() {
   const navigate = useNavigate();
-  const { loading, customerRegister } = useAuthStore();
+  const { loading } = useAuthStore();
   const { showToast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -103,11 +104,15 @@ function Register() {
     }
 
     try {
-      await customerRegister(formData, showToast);
-      showToast('Đăng ký thành công! Vui lòng liên hệ Admin để nhận mã bí mật.', 'success');
+      const response = await authApi.customerRegister(formData);
+      showToast(
+        'Đăng ký thành công! Vui lòng liên hệ Admin để nhận mã bí mật và đăng nhập.',
+        'success',
+      );
       navigate('/login');
     } catch (error) {
       console.error('Register error:', error);
+      showToast(error.message, 'error');
     }
   };
 

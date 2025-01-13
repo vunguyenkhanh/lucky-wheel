@@ -202,9 +202,12 @@ export const checkSecretCode = async (req, res) => {
 
 export const customerRegister = async (req, res) => {
   try {
+    console.log('Register request body:', req.body); // Log request data
+
     const { name, phoneNumber, address } = req.body;
 
-    console.log('Register request:', { name, phoneNumber, address }); // Debug log
+    // Log validation
+    console.log('Validating input:', { name, phoneNumber, address });
 
     // Validate input
     if (!name || !phoneNumber || !address) {
@@ -224,7 +227,13 @@ export const customerRegister = async (req, res) => {
       });
     }
 
-    // Tạo customer mới
+    // Log before creating customer
+    console.log('Creating customer with data:', {
+      name: name.trim(),
+      phoneNumber: phoneNumber.trim(),
+      address: address.trim(),
+    });
+
     const customer = await prisma.customer.create({
       data: {
         name: name.trim(),
@@ -233,14 +242,19 @@ export const customerRegister = async (req, res) => {
       },
     });
 
-    console.log('Created customer:', customer); // Debug log
+    // Log created customer
+    console.log('Created customer:', customer);
 
     return res.status(201).json({
       message: 'Đăng ký thành công',
       customer,
     });
   } catch (error) {
-    console.error('Customer register error:', error); // Chi tiết lỗi
+    console.error('Customer register error:', error);
+    // Log detailed error
+    if (error.code === 'P2002') {
+      console.log('Unique constraint violation:', error.meta);
+    }
     return res.status(500).json({
       error: 'Có lỗi xảy ra khi đăng ký. Vui lòng thử lại sau.',
     });
