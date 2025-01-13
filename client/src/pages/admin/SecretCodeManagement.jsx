@@ -36,6 +36,22 @@ const addMinutesToDate = (date, minutes) => {
   return formatDateTime(newDate);
 };
 
+// Thêm hàm validate thời gian
+const validateExpirationDate = (dateTime) => {
+  const now = new Date();
+  const expiration = new Date(dateTime);
+
+  if (isNaN(expiration.getTime())) {
+    throw new Error('Thời gian không hợp lệ');
+  }
+
+  if (expiration <= now) {
+    throw new Error('Thời gian hết hạn phải lớn hơn thời gian hiện tại');
+  }
+
+  return true;
+};
+
 function SecretCodeManagement() {
   const { showToast } = useToast();
   const [secretCodes, setSecretCodes] = useState([]);
@@ -63,7 +79,10 @@ function SecretCodeManagement() {
       const data = await secretCodeApi.getSecretCodes();
       setSecretCodes(data);
     } catch (error) {
-      showToast(error.message, 'error');
+      showToast(
+        error.message || 'Không thể kết nối đến server. Vui lòng kiểm tra lại kết nối!',
+        'error',
+      );
     } finally {
       setLoading(false);
     }
@@ -78,8 +97,10 @@ function SecretCodeManagement() {
     e.preventDefault();
     try {
       setLoading(true);
-      // Kết hợp ngày và giờ
       const expirationDateTime = new Date(`${formData.expirationDate}T${formData.expirationTime}`);
+
+      // Validate thời gian
+      validateExpirationDate(expirationDateTime);
 
       await secretCodeApi.createSecretCode({
         expirationDate: expirationDateTime.toISOString(),
@@ -147,11 +168,13 @@ function SecretCodeManagement() {
       try {
         await secretCodeApi.updateSecretCode(code.id, {
           status: 'Hết hạn',
+          expirationDate: code.expirationDate, // Gửi lại thời gian hết hạn hiện tại
         });
-        await fetchSecretCodes(); // Refresh danh sách sau khi cập nhật
+        await fetchSecretCodes();
       } catch (error) {
         console.error('Error updating expired code:', error);
         showToast(error.message, 'error');
+        return Promise.reject(error);
       }
     }
   };
@@ -174,43 +197,65 @@ function SecretCodeManagement() {
 
   // Cập nhật lại hàm xử lý chọn nhanh thời gian
   const handleQuickSelect = (minutes) => {
-    // Nếu đang cập nhật, tăng thời gian từ thời gian hết hạn hiện tại
-    const baseDate = selectedCode ? formData.originalDateTime : new Date();
+    try {
+      const baseDate = selectedCode ? formData.originalDateTime : new Date();
+      const newDateTime = addMinutesToDate(baseDate, minutes);
 
-    const newDateTime = addMinutesToDate(baseDate, minutes);
-    setFormData({
-      ...formData,
-      expirationDate: newDateTime.date,
-      expirationTime: newDateTime.time,
-      displayDateTime: newDateTime.display,
-      originalDateTime: new Date(`${newDateTime.date}T${newDateTime.time}`),
-    });
+      // Validate thời gian mới
+      validateExpirationDate(new Date(`${newDateTime.date}T${newDateTime.time}`));
+
+      setFormData({
+        ...formData,
+        expirationDate: newDateTime.date,
+        expirationTime: newDateTime.time,
+        displayDateTime: newDateTime.display,
+        originalDateTime: new Date(`${newDateTime.date}T${newDateTime.time}`),
+      });
+    } catch (error) {
+      showToast(error.message, 'error');
+    }
   };
 
   // Cập nhật lại khi thay đổi ngày
   const handleDateChange = (e) => {
-    const newDate = new Date(`${e.target.value}T${formData.expirationTime || '00:00:00'}`);
-    const formatted = formatDateTime(newDate);
-    setFormData({
-      ...formData,
-      expirationDate: formatted.date,
-      displayDateTime: formatted.display,
-      originalDateTime: newDate,
-    });
+    try {
+      const newDate = new Date(`${e.target.value}T${formData.expirationTime || '00:00:00'}`);
+
+      // Validate thời gian mới
+      validateExpirationDate(newDate);
+
+      const formatted = formatDateTime(newDate);
+      setFormData({
+        ...formData,
+        expirationDate: formatted.date,
+        displayDateTime: formatted.display,
+        originalDateTime: newDate,
+      });
+    } catch (error) {
+      showToast(error.message, 'error');
+    }
   };
 
   // Cập nhật lại khi thay đổi giờ
   const handleTimeChange = (e) => {
-    const newDate = new Date(
-      `${formData.expirationDate || new Date().toISOString().split('T')[0]}T${e.target.value}`,
-    );
-    const formatted = formatDateTime(newDate);
-    setFormData({
-      ...formData,
-      expirationTime: formatted.time,
-      displayDateTime: formatted.display,
-      originalDateTime: newDate,
-    });
+    try {
+      const newDate = new Date(
+        `${formData.expirationDate || new Date().toISOString().split('T')[0]}T${e.target.value}`,
+      );
+
+      // Validate thời gian mới
+      validateExpirationDate(newDate);
+
+      const formatted = formatDateTime(newDate);
+      setFormData({
+        ...formData,
+        expirationTime: formatted.time,
+        displayDateTime: formatted.display,
+        originalDateTime: newDate,
+      });
+    } catch (error) {
+      showToast(error.message, 'error');
+    }
   };
 
   if (loading && !secretCodes.length) return <LoadingSpinner />;
@@ -376,17 +421,33 @@ function SecretCodeManagement() {
 
             <form onSubmit={selectedCode ? handleUpdate : handleCreate}>
               {selectedCode && (
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700">Trạng thái</label>
-                  <select
-                    value={formData.status || 'Chưa dùng'}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                  >
-                    <option value="Chưa dùng">Chưa dùng</option>
-                    <option value="Hết hạn">Hết hạn</option>
-                  </select>
-                </div>
+                <>
+                  {/* Hiển thị mã bí mật */}
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700">Mã bí mật</label>
+                    <div className="mt-1 flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={selectedCode.code}
+                        readOnly
+                        className="block w-full rounded-md border-gray-300 bg-gray-50 cursor-default"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Trạng thái */}
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700">Trạng thái</label>
+                    <select
+                      value={formData.status || 'Chưa dùng'}
+                      onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    >
+                      <option value="Chưa dùng">Chưa dùng</option>
+                      <option value="Hết hạn">Hết hạn</option>
+                    </select>
+                  </div>
+                </>
               )}
 
               <div className="mb-4">

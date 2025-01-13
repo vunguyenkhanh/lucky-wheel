@@ -27,6 +27,9 @@ export const secretCodeApi = {
       const response = await api.put(`/admin/secret-codes/${id}`, data);
       return response.data;
     } catch (error) {
+      if (!error.response) {
+        throw new Error('Không thể kết nối đến server. Vui lòng kiểm tra lại kết nối!');
+      }
       if (error.response?.status === 400) {
         throw new Error(error.response.data.error);
       }

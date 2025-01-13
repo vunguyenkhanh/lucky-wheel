@@ -4,6 +4,7 @@ function CountdownTimer({ expirationDate, onExpired }) {
   const [timeLeft, setTimeLeft] = useState('');
   const [isExpired, setIsExpired] = useState(false);
   const [flippedIndex, setFlippedIndex] = useState(-1); // Theo dõi chữ số đang flip
+  const [retryCount, setRetryCount] = useState(0); // Thêm retry counter
 
   useEffect(() => {
     const calculateTimeLeft = () => {
@@ -13,7 +14,16 @@ function CountdownTimer({ expirationDate, onExpired }) {
 
       if (difference <= 0) {
         setIsExpired(true);
-        onExpired?.();
+        // Thử gọi onExpired tối đa 3 lần nếu thất bại
+        if (onExpired && retryCount < 3) {
+          onExpired().catch(() => {
+            setRetryCount((prev) => prev + 1);
+            // Thử lại sau 5 giây
+            setTimeout(() => {
+              onExpired().catch(console.error);
+            }, 5000);
+          });
+        }
         return '00:00:00';
       }
 
@@ -45,7 +55,7 @@ function CountdownTimer({ expirationDate, onExpired }) {
     setTimeLeft(calculateTimeLeft());
 
     return () => clearInterval(timer);
-  }, [expirationDate, onExpired, timeLeft]);
+  }, [expirationDate, onExpired, retryCount]);
 
   if (isExpired) {
     return <span className="text-red-500 font-medium">Đã hết hạn</span>;
