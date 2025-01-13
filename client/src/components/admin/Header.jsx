@@ -1,12 +1,14 @@
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '../../contexts/ToastContext';
 import { useAuthStore } from '../../store/authStore';
 
 function Header() {
   const navigate = useNavigate();
   const { adminLogout } = useAuthStore();
+  const { showToast } = useToast();
 
   const handleLogout = async () => {
-    await adminLogout();
+    await adminLogout(showToast);
     navigate('/admin/login');
   };
 

@@ -3,6 +3,7 @@ import AsyncErrorBoundary from './components/error/AsyncErrorBoundary';
 import { ToastProvider } from './contexts/ToastContext';
 import AdminLayout from './layouts/AdminLayout';
 import MainLayout from './layouts/MainLayout';
+import AdminManagement from './pages/admin/AdminManagement';
 import AdminDashboard from './pages/admin/Dashboard';
 import AdminLogin from './pages/admin/Login';
 import Home from './pages/Home';
@@ -63,6 +64,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <AdminDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="admins"
+                element={
+                  <ProtectedRoute>
+                    <AdminManagement />
                   </ProtectedRoute>
                 }
               />

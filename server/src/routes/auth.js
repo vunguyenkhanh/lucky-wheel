@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import express from 'express';
 import jwt from 'jsonwebtoken';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticateAdmin, authenticateToken } from '../middleware/auth.js';
 import { loginLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
@@ -12,6 +12,11 @@ const prisma = new PrismaClient();
 router.post('/admin/login', loginLimiter, async (req, res) => {
   try {
     const { username, password } = req.body;
+
+    // Kiểm tra username và password có được gửi lên không
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Vui lòng nhập đầy đủ thông tin' });
+    }
 
     const admin = await prisma.admin.findUnique({
       where: { username },
@@ -36,9 +41,10 @@ router.post('/admin/login', loginLimiter, async (req, res) => {
 });
 
 // Admin logout
-router.post('/admin/logout', authenticateToken, (req, res) => {
+router.post('/admin/logout', authenticateAdmin, (req, res) => {
   try {
-    // Trong thực tế có thể thêm token vào blacklist hoặc xóa session
+    // Trong thực tế có thể thêm token vào blacklist nếu cần
+    res.clearCookie('token');
     res.json({ message: 'Đăng xuất thành công' });
   } catch (error) {
     console.error('Logout error:', error);

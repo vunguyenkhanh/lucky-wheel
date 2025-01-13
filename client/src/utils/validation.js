@@ -21,17 +21,19 @@ export const validatePrize = (prize) => {
 
   if (!prize.name?.trim()) {
     errors.name = 'Tên giải thưởng không được để trống';
+  } else if (prize.name.length < 2 || prize.name.length > 100) {
+    errors.name = 'Tên giải thưởng phải từ 2 đến 100 ký tự';
   }
 
   if (!prize.imageUrl?.trim()) {
-    errors.imageUrl = 'URL hình ảnh không được để trống';
+    errors.imageUrl = 'Hình ảnh không được để trống';
   }
 
-  if (prize.quantity == null || prize.quantity < 0) {
-    errors.quantity = 'Số lượng phải lớn hơn hoặc bằng 0';
+  if (typeof prize.quantity !== 'number' || prize.quantity < 0) {
+    errors.quantity = 'Số lượng phải là số dương';
   }
 
-  if (prize.winRate == null || prize.winRate < 0 || prize.winRate > 1) {
+  if (typeof prize.winRate !== 'number' || prize.winRate < 0 || prize.winRate > 1) {
     errors.winRate = 'Tỷ lệ trúng phải từ 0 đến 1';
   }
 
@@ -101,6 +103,28 @@ export const validateAdminLoginForm = (values) => {
     errors.password = 'Vui lòng nhập mật khẩu';
   } else if (values.password.length < 6) {
     errors.password = 'Mật khẩu phải có ít nhất 6 ký tự';
+  }
+
+  return errors;
+};
+
+export const validateAdminForm = (values) => {
+  const errors = {};
+
+  if (!values.username) {
+    errors.username = 'Username không được để trống';
+  } else if (values.username.length < 3) {
+    errors.username = 'Username phải có ít nhất 3 ký tự';
+  }
+
+  if (!values.password) {
+    errors.password = 'Mật khẩu không được để trống';
+  } else if (values.password.length < 6) {
+    errors.password = 'Mật khẩu phải có ít nhất 6 ký tự';
+  }
+
+  if (values.confirmPassword !== values.password) {
+    errors.confirmPassword = 'Mật khẩu xác nhận không khớp';
   }
 
   return errors;

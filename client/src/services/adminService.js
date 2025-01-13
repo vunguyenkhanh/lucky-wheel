@@ -1,6 +1,27 @@
 import api from '../config/api';
 
 export const adminService = {
+  // Admin Management
+  getAdmins: async () => {
+    const response = await api.get('/admin/admins');
+    return response.data;
+  },
+
+  createAdmin: async (data) => {
+    const response = await api.post('/admin/admins', data);
+    return response.data;
+  },
+
+  updateAdmin: async (id, data) => {
+    const response = await api.put(`/admin/admins/${id}`, data);
+    return response.data;
+  },
+
+  deleteAdmin: async (id) => {
+    const response = await api.delete(`/admin/admins/${id}`);
+    return response.data;
+  },
+
   // Secret Code Management
   generateSecretCodes: async (data) => {
     const response = await api.post('/admin/secret-codes', data);

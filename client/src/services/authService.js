@@ -36,9 +36,23 @@ export const authService = {
 
   adminLogout: async () => {
     try {
-      await api.post('/auth/admin/logout');
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No token found');
+      }
+
+      await api.post('/auth/admin/logout', null, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      localStorage.removeItem('token');
     } catch (error) {
       console.error('Admin logout error:', error);
+      // Vẫn xóa token ngay cả khi API call thất bại
+      localStorage.removeItem('token');
+      throw error;
     }
   },
 

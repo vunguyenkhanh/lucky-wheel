@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { validatePrize } from '../../../utils/validation';
 import FormField from '../../common/FormField';
+import { useToast } from '../../common/ToastContext';
 
 function PrizeForm({ onSubmit, onImageUpload, initialData }) {
+  const { showToast } = useToast();
   const [formData, setFormData] = useState(
     initialData || {
       name: '',
@@ -50,14 +52,15 @@ function PrizeForm({ onSubmit, onImageUpload, initialData }) {
       return;
     }
 
-    await onSubmit(formData);
-    if (!initialData) {
-      setFormData({
-        name: '',
-        imageUrl: '',
-        quantity: 0,
-        winRate: 0,
-      });
+    try {
+      if (initialData) {
+        await updatePrize(initialData.id, formData, showToast);
+      } else {
+        await createPrize(formData, showToast);
+      }
+      onClose();
+    } catch (error) {
+      console.error('Submit prize error:', error);
     }
   };
 

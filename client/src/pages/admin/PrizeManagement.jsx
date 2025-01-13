@@ -1,15 +1,27 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { useToast } from '../../contexts/ToastContext';
 import { usePrizeStore } from '../../store/prizeStore';
 
 function PrizeManagement() {
   const { prizes, loading, error, fetchPrizes, deletePrize } = usePrizeStore();
   const [searchTerm, setSearchTerm] = useState('');
+  const { showToast } = useToast();
 
   useEffect(() => {
-    fetchPrizes();
-  }, [fetchPrizes]);
+    fetchPrizes(showToast);
+  }, [fetchPrizes, showToast]);
+
+  const handleDelete = async (id) => {
+    if (window.confirm('Bạn có chắc chắn muốn xóa giải thưởng này?')) {
+      try {
+        await deletePrize(id, showToast);
+      } catch (error) {
+        console.error('Delete prize error:', error);
+      }
+    }
+  };
 
   if (loading) return <LoadingSpinner />;
   if (error) return <div className="text-center text-red-500">{error}</div>;
@@ -104,7 +116,7 @@ function PrizeManagement() {
                     Sửa
                   </Link>
                   <button
-                    onClick={() => deletePrize(prize.id)}
+                    onClick={() => handleDelete(prize.id)}
                     className="text-red-600 hover:text-red-900"
                   >
                     Xóa

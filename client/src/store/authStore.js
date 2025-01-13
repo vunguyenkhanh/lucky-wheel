@@ -11,64 +11,86 @@ export const useAuthStore = create(
       user: null,
       loading: false,
       error: null,
+      token: null,
 
       // Admin actions
-      adminLogin: async (credentials) => {
+      adminLogin: async (credentials, showToast) => {
         set({ loading: true, error: null });
         try {
           const { token } = await authService.adminLogin(credentials);
           localStorage.setItem('token', token);
-          set({ isAdmin: true, loading: false });
+          set({
+            isAdmin: true,
+            isAuthenticated: true,
+            loading: false,
+            token: token,
+          });
+          showToast('Đăng nhập thành công', 'success');
         } catch (error) {
-          set({ error: error.message, loading: false });
+          const message = error.response?.data?.error || error.message || 'Đăng nhập thất bại';
+          set({ error: message, loading: false });
+          showToast(message, 'error');
           throw error;
         }
       },
 
-      adminLogout: async () => {
+      adminLogout: async (showToast) => {
         try {
           await authService.adminLogout();
+          showToast('Đăng xuất thành công', 'success');
         } catch (error) {
           console.error('Admin logout error:', error);
+          showToast('Đã có lỗi xảy ra khi đăng xuất', 'error');
         } finally {
           localStorage.removeItem('token');
           set({
+            isAuthenticated: false,
             isAdmin: false,
+            user: null,
             error: null,
+            token: null,
           });
         }
       },
 
       // Actions
-      login: async (credentials) => {
+      login: async (credentials, showToast) => {
         set({ loading: true, error: null });
         try {
           const { user, token } = await authService.login(credentials);
           set({ isAuthenticated: true, user, loading: false });
           localStorage.setItem('token', token);
+          showToast('Đăng nhập thành công', 'success');
         } catch (error) {
-          set({ error: error.response?.data?.error || 'Đăng nhập thất bại', loading: false });
+          const message = error.response?.data?.error || 'Đăng nhập thất bại';
+          set({ error: message, loading: false });
+          showToast(message, 'error');
           throw error;
         }
       },
 
-      register: async (userData) => {
+      register: async (userData, showToast) => {
         set({ loading: true, error: null });
         try {
           const data = await authService.register(userData);
           set({ loading: false });
+          showToast('Đăng ký thành công', 'success');
           return data;
         } catch (error) {
-          set({ error: error.response?.data?.error || 'Đăng ký thất bại', loading: false });
+          const message = error.response?.data?.error || 'Đăng ký thất bại';
+          set({ error: message, loading: false });
+          showToast(message, 'error');
           throw error;
         }
       },
 
-      logout: async () => {
+      logout: async (showToast) => {
         try {
           await authService.logout();
+          showToast('Đăng xuất thành công', 'success');
         } catch (error) {
           console.error('Logout error:', error);
+          showToast('Đã có lỗi xảy ra khi đăng xuất', 'error');
         } finally {
           localStorage.removeItem('token');
           set({
@@ -92,6 +114,11 @@ export const useAuthStore = create(
     }),
     {
       name: 'auth-storage',
+      partialize: (state) => ({
+        isAuthenticated: state.isAuthenticated,
+        isAdmin: state.isAdmin,
+        token: state.token,
+      }),
     },
   ),
 );
