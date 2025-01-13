@@ -76,7 +76,7 @@ function SecretCodeForm({ onClose }) {
               htmlFor="expirationDate"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
-              Ngày hết hạn
+              Thời gian hết hạn
             </label>
             <input
               type="date"

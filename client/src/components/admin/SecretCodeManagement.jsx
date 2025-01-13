@@ -56,7 +56,7 @@ function SecretCodeManagement() {
                 Trạng thái
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Ngày hết hạn
+                Thời gian hết hạn
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                 Đã sử dụng

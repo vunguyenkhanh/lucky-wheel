@@ -6,6 +6,7 @@ import { requestLogger } from './middleware/logging.js';
 import { apiLimiter } from './middleware/rateLimiter.js';
 import authRoutes from './routes/auth.js';
 import prizeRoutes from './routes/prize.js';
+import secretCodeRoutes from './routes/secretCode.js';
 import wheelRoutes from './routes/wheel.js';
 
 dotenv.config();
@@ -30,6 +31,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin/prizes', prizeRoutes);
 app.use('/api/prizes', prizeRoutes);
 app.use('/api/wheel', wheelRoutes);
+app.use('/api/admin/secret-codes', secretCodeRoutes);
 
 app.use(requestLogger);
 

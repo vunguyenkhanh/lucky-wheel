@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { secretCodeApi } from '../../api/secretCodeApi';
+import StatCard from '../../components/admin/StatCard';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { usePrizeStore } from '../../store/prizeStore';
 
@@ -10,12 +12,38 @@ function AdminDashboard() {
     todaySpins: 0,
     totalCustomers: 0,
     activePrizes: 0,
+    totalCodes: 0,
+    usedCodes: 0,
+    expiredCodes: 0,
+    availableCodes: 0,
   });
 
   useEffect(() => {
     fetchPrizes();
     // Fetch thêm thống kê từ API
   }, [fetchPrizes]);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const codes = await secretCodeApi.getSecretCodes();
+        const now = new Date();
+
+        setStats({
+          totalCodes: codes.length,
+          usedCodes: codes.filter((code) => code.status === 'Đã dùng').length,
+          expiredCodes: codes.filter((code) => new Date(code.expirationDate) < now).length,
+          availableCodes: codes.filter(
+            (code) => code.status === 'Chưa dùng' && new Date(code.expirationDate) > now,
+          ).length,
+        });
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+      }
+    };
+
+    fetchStats();
+  }, []);
 
   if (loading) return <LoadingSpinner />;
   if (error) return <div className="text-center text-red-500">{error}</div>;
@@ -147,6 +175,18 @@ function AdminDashboard() {
             <div className="text-center text-gray-500 py-8">Chức năng đang được phát triển...</div>
           </div>
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard title="Tổng số mã" value={stats.totalCodes} icon="🔢" color="bg-blue-100" />
+        <StatCard title="Mã đã sử dụng" value={stats.usedCodes} icon="✅" color="bg-green-100" />
+        <StatCard title="Mã hết hạn" value={stats.expiredCodes} icon="⌛" color="bg-red-100" />
+        <StatCard
+          title="Mã khả dụng"
+          value={stats.availableCodes}
+          icon="🔑"
+          color="bg-yellow-100"
+        />
       </div>
     </div>
   );

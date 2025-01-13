@@ -12,6 +12,7 @@ import Wheel from './pages/Wheel';
 import AdminManagement from './pages/admin/AdminManagement';
 import AdminDashboard from './pages/admin/Dashboard';
 import AdminLogin from './pages/admin/Login';
+import SecretCodeManagement from './pages/admin/SecretCodeManagement';
 import { useAuthStore } from './store/authStore';
 
 const CustomerRoute = ({ children }) => {
@@ -96,9 +97,25 @@ export const routes = [
               </ProtectedRoute>
             ),
           },
+          {
+            path: 'secret-codes',
+            element: (
+              <ProtectedRoute>
+                <SecretCodeManagement />
+              </ProtectedRoute>
+            ),
+          },
         ],
       },
     ],
+  },
+  {
+    path: 'secret-codes',
+    element: (
+      <ProtectedRoute>
+        <SecretCodeManagement />
+      </ProtectedRoute>
+    ),
   },
   {
     path: '*',

@@ -8,6 +8,24 @@ function AdminLayout() {
   const location = useLocation();
   const isLoginPage = location.pathname === '/admin/login';
 
+  const menuItems = [
+    {
+      path: '/admin/dashboard',
+      label: 'Dashboard',
+      icon: '📊',
+    },
+    {
+      path: '/admin/secret-codes',
+      label: 'Quản lý mã bí mật',
+      icon: '🔑',
+    },
+    {
+      path: '/admin/admins',
+      label: 'Quản lý Admin',
+      icon: '👥',
+    },
+  ];
+
   if (isLoginPage) {
     return <Outlet />;
   }
