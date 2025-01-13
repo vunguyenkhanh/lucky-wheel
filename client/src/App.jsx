@@ -24,7 +24,7 @@ const CustomerRoute = ({ children }) => {
   return children;
 };
 
-const routes = [
+export const routes = [
   {
     element: (
       <ToastProvider>
@@ -105,5 +105,3 @@ const routes = [
     element: <NotFound />,
   },
 ];
-
-export default routes;
