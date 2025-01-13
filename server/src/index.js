@@ -2,14 +2,17 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
 import session from 'express-session';
+
+// Load biến môi trường trước khi import các routes
+dotenv.config();
+
+// Import các routes và middleware sau khi load biến môi trường
 import { requestLogger } from './middleware/logging.js';
 import { apiLimiter } from './middleware/rateLimiter.js';
 import authRoutes from './routes/auth.js';
 import prizeRoutes from './routes/prize.js';
 import secretCodeRoutes from './routes/secretCode.js';
 import wheelRoutes from './routes/wheel.js';
-
-dotenv.config();
 
 const app = express();
 
@@ -23,18 +26,7 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Apply rate limiting to all routes
-app.use('/api', apiLimiter);
-
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/admin/prizes', prizeRoutes);
-app.use('/api/prizes', prizeRoutes);
-app.use('/api/wheel', wheelRoutes);
-app.use('/api/admin/secret-codes', secretCodeRoutes);
-
-app.use(requestLogger);
-
+// Di chuyển session middleware lên trước các routes
 app.use(
   session({
     secret: process.env.SESSION_SECRET || 'your-secret-key',
@@ -47,6 +39,18 @@ app.use(
     },
   }),
 );
+
+// Apply rate limiting to all routes
+app.use('/api', apiLimiter);
+
+app.use(requestLogger);
+
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/admin/prizes', prizeRoutes);
+app.use('/api/prizes', prizeRoutes);
+app.use('/api/wheel', wheelRoutes);
+app.use('/api/admin/secret-codes', secretCodeRoutes);
 
 const PORT = process.env.PORT || 3000;
 

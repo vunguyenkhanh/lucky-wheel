@@ -4,8 +4,18 @@ import jwt from 'jsonwebtoken';
 
 const prisma = new PrismaClient();
 
+// Đảm bảo xử lý lỗi khi đóng kết nối
+process.on('beforeExit', async () => {
+  await prisma.$disconnect();
+});
+
 export const adminLogin = async (req, res) => {
   try {
+    // Kiểm tra JWT_SECRET
+    if (!process.env.JWT_SECRET) {
+      throw new Error('JWT_SECRET is not defined in environment variables');
+    }
+
     const { username, password } = req.body;
 
     // Validate input
@@ -34,32 +44,40 @@ export const adminLogin = async (req, res) => {
       });
     }
 
-    const token = jwt.sign(
-      {
-        id: admin.id,
-        username: admin.username,
-        role: 'admin',
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: '1d' },
-    );
+    // Thêm try-catch khi tạo token
+    try {
+      const token = jwt.sign(
+        {
+          id: admin.id,
+          username: admin.username,
+          role: 'admin',
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: '1d' },
+      );
 
-    // Xóa session customer nếu có
-    if (req.session) {
-      req.session.destroy((err) => {
-        if (err) console.error('Error destroying session:', err);
+      // Xóa session customer nếu có
+      if (req.session) {
+        req.session.destroy((err) => {
+          if (err) console.error('Error destroying session:', err);
+        });
+      }
+
+      return res.status(200).json({
+        token,
+        message: 'Đăng nhập thành công',
+        user: {
+          id: admin.id,
+          username: admin.username,
+          role: 'admin',
+        },
+      });
+    } catch (jwtError) {
+      console.error('JWT signing error:', jwtError);
+      return res.status(500).json({
+        error: 'Lỗi xác thực. Vui lòng thử lại sau.',
       });
     }
-
-    return res.status(200).json({
-      token,
-      message: 'Đăng nhập thành công',
-      user: {
-        id: admin.id,
-        username: admin.username,
-        role: 'admin',
-      },
-    });
   } catch (error) {
     console.error('Admin login error:', error);
     return res.status(500).json({
