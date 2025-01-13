@@ -34,7 +34,11 @@ export const adminLogin = async (req, res) => {
       });
     }
 
-    // Tạo token
+    // Xóa session customer nếu có
+    if (req.session) {
+      req.session.destroy();
+    }
+
     const token = jwt.sign(
       {
         id: admin.id,
@@ -45,21 +49,21 @@ export const adminLogin = async (req, res) => {
       { expiresIn: '1d' },
     );
 
-    // Set cookie
+    // Set token cho admin
     res.cookie('admin_token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 24 * 60 * 60 * 1000, // 1 day
+      maxAge: 24 * 60 * 60 * 1000,
     });
 
-    // Trả về response thành công
     return res.status(200).json({
       token,
       message: 'Đăng nhập thành công',
       user: {
         id: admin.id,
         username: admin.username,
+        role: 'admin',
       },
     });
   } catch (error) {
@@ -130,11 +134,23 @@ export const customerAuth = async (req, res) => {
       data: { status: 'Đã dùng' },
     });
 
-    // Tạo session cho khách hàng
-    req.session.customerId = customer.id;
+    // Xóa token admin nếu có
+    res.clearCookie('admin_token');
 
-    res.json({ message: 'Xác thực thành công' });
+    // Set session cho customer
+    req.session.customerId = customer.id;
+    req.session.role = 'customer';
+
+    return res.status(200).json({
+      message: 'Xác thực thành công',
+      user: {
+        id: customer.id,
+        phoneNumber: customer.phoneNumber,
+        role: 'customer',
+      },
+    });
   } catch (error) {
+    console.error('Customer auth error:', error);
     res.status(500).json({ error: 'Lỗi xác thực' });
   }
 };

@@ -1,13 +1,13 @@
 import { PrismaClient } from '@prisma/client';
 import express from 'express';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticateCustomer } from '../middleware/auth.js';
 import { spinLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
 
 // Kiểm tra điều kiện quay
-router.get('/check-eligibility', authenticateToken, async (req, res) => {
+router.get('/check-eligibility', authenticateCustomer, async (req, res) => {
   try {
     // Logic kiểm tra điều kiện quay
     return res.json({ canSpin: true });
@@ -18,9 +18,9 @@ router.get('/check-eligibility', authenticateToken, async (req, res) => {
 });
 
 // Quay thưởng
-router.post('/spin', authenticateToken, spinLimiter, async (req, res) => {
+router.post('/spin', authenticateCustomer, spinLimiter, async (req, res) => {
   try {
-    const userId = req.user.id;
+    const customerId = req.customer.id;
 
     // Lấy tất cả giải thưởng còn số lượng > 0
     const availablePrizes = await prisma.prize.findMany({
@@ -66,7 +66,7 @@ router.post('/spin', authenticateToken, spinLimiter, async (req, res) => {
     // Lưu lịch sử quay
     const history = await prisma.prizeHistory.create({
       data: {
-        customerId: userId,
+        customerId: customerId,
         prizeId: selectedPrize.id,
       },
       include: {
@@ -86,13 +86,13 @@ router.post('/spin', authenticateToken, spinLimiter, async (req, res) => {
 });
 
 // Lấy lịch sử quay
-router.get('/history', authenticateToken, async (req, res) => {
+router.get('/history', authenticateCustomer, async (req, res) => {
   try {
-    const userId = req.user.id;
+    const customerId = req.customer.id;
 
     const history = await prisma.prizeHistory.findMany({
       where: {
-        customerId: userId,
+        customerId: customerId,
       },
       include: {
         prize: true,

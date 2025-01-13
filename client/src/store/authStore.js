@@ -18,13 +18,41 @@ export const useAuthStore = create(
         set({ loading: true, error: null });
         try {
           const { token, message, user } = await authService.adminLogin(credentials);
-          localStorage.setItem('token', token);
+          localStorage.setItem('admin_token', token);
           set({
             isAdmin: true,
             isAuthenticated: true,
             loading: false,
             token: token,
-            user: user,
+            user: { ...user, role: 'admin' },
+            error: null,
+          });
+          showToast(message, 'success');
+          return { success: true };
+        } catch (error) {
+          set({
+            error: error.message,
+            loading: false,
+            isAdmin: false,
+            isAuthenticated: false,
+            user: null,
+            token: null,
+          });
+          showToast(error.message, 'error');
+          throw error;
+        }
+      },
+
+      // Customer actions
+      customerLogin: async (credentials, showToast) => {
+        set({ loading: true, error: null });
+        try {
+          const { message, user } = await authService.customerAuth(credentials);
+          set({
+            isAdmin: false,
+            isAuthenticated: true,
+            loading: false,
+            user: { ...user, role: 'customer' },
             error: null,
           });
           showToast(message, 'success');
@@ -42,6 +70,20 @@ export const useAuthStore = create(
         }
       },
 
+      // Reset state
+      reset: () => {
+        localStorage.removeItem('admin_token');
+        set({
+          isAuthenticated: false,
+          isAdmin: false,
+          user: null,
+          loading: false,
+          error: null,
+          token: null,
+        });
+      },
+
+      // Logout actions
       adminLogout: async (showToast) => {
         try {
           await authService.adminLogout();
@@ -55,7 +97,6 @@ export const useAuthStore = create(
           showToast('Đăng xuất thành công', 'success');
         } catch (error) {
           console.error('Admin logout error:', error);
-          showToast('Đã có lỗi xảy ra khi đăng xuất', 'error');
           set({
             isAuthenticated: false,
             isAdmin: false,
@@ -63,70 +104,34 @@ export const useAuthStore = create(
             error: null,
             token: null,
           });
-          throw error;
+          if (error.message !== 'Không tìm thấy token') {
+            showToast('Đã có lỗi xảy ra khi đăng xuất', 'error');
+          }
         }
       },
 
-      // Actions
-      login: async (credentials, showToast) => {
-        set({ loading: true, error: null });
+      customerLogout: async (showToast) => {
         try {
-          const { user, token } = await authService.login(credentials);
-          set({ isAuthenticated: true, user, loading: false });
-          localStorage.setItem('token', token);
-          showToast('Đăng nhập thành công', 'success');
-        } catch (error) {
-          const message = error.response?.data?.error || 'Đăng nhập thất bại';
-          set({ error: message, loading: false });
-          showToast(message, 'error');
-          throw error;
-        }
-      },
-
-      register: async (userData, showToast) => {
-        set({ loading: true, error: null });
-        try {
-          const data = await authService.register(userData);
-          set({ loading: false });
-          showToast('Đăng ký thành công', 'success');
-          return data;
-        } catch (error) {
-          const message = error.response?.data?.error || 'Đăng ký thất bại';
-          set({ error: message, loading: false });
-          showToast(message, 'error');
-          throw error;
-        }
-      },
-
-      logout: async (showToast) => {
-        try {
-          await authService.logout();
-          showToast('Đăng xuất thành công', 'success');
-        } catch (error) {
-          console.error('Logout error:', error);
-          showToast('Đã có lỗi xảy ra khi đăng xuất', 'error');
-        } finally {
-          localStorage.removeItem('token');
+          await authService.customerLogout();
           set({
             isAuthenticated: false,
+            isAdmin: false,
             user: null,
             error: null,
           });
+          showToast('Đăng xuất thành công', 'success');
+        } catch (error) {
+          console.error('Customer logout error:', error);
+          showToast('Đã có lỗi xảy ra khi đăng xuất', 'error');
+          set({
+            isAuthenticated: false,
+            isAdmin: false,
+            user: null,
+            error: null,
+          });
+          throw error;
         }
       },
-
-      reset: () => {
-        localStorage.removeItem('token');
-        set({
-          isAuthenticated: false,
-          isAdmin: false,
-          user: null,
-          loading: false,
-          error: null,
-        });
-      },
-
-      setLoading: (state) => set({ loading: state }),
     }),
     {
       name: 'auth-storage',
@@ -134,6 +139,7 @@ export const useAuthStore = create(
         isAuthenticated: state.isAuthenticated,
         isAdmin: state.isAdmin,
         token: state.token,
+        user: state.user ? { ...state.user, role: state.user.role } : null,
       }),
     },
   ),

@@ -7,11 +7,9 @@ function Header() {
   const handleLogout = async () => {
     try {
       await adminLogout(showToast);
-      // Redirect sau khi logout thành công
       navigate('/admin/login');
     } catch (error) {
-      // Toast đã được xử lý trong adminLogout
-      console.error('Logout error:', error);
+      navigate('/admin/login');
     }
   };
   // ... rest of the component
