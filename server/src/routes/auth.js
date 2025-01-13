@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import express from 'express';
 import {
   adminLogin,
   adminLogout,
@@ -6,18 +6,16 @@ import {
   customerLogout,
   customerRegister,
 } from '../controllers/authController.js';
-import { authenticateAdmin, authenticateCustomer } from '../middleware/auth.js';
-import { loginLimiter } from '../middleware/rateLimiter.js';
 
-const router = Router();
+const router = express.Router();
 
-// Admin routes (sử dụng JWT)
-router.post('/admin/login', loginLimiter, adminLogin);
-router.post('/admin/logout', authenticateAdmin, adminLogout);
+// Admin routes
+router.post('/admin/login', adminLogin);
+router.post('/admin/logout', adminLogout);
 
-// Customer routes (sử dụng session)
+// Customer routes
 router.post('/customer/register', customerRegister);
-router.post('/customer/auth', customerAuth);
-router.post('/customer/logout', authenticateCustomer, customerLogout);
+router.post('/customer/login', customerAuth);
+router.post('/customer/logout', customerLogout);
 
 export default router;

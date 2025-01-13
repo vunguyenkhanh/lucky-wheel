@@ -1,112 +1,14 @@
-import { PrismaClient } from '@prisma/client';
 import express from 'express';
-import { authenticateCustomer } from '../middleware/auth.js';
-import { spinLimiter } from '../middleware/rateLimiter.js';
+import { getWheelConfig, spin, updateWheelConfig } from '../controllers/wheelController.js';
+import { verifyAdminToken, verifyCustomerSession } from '../middleware/auth.js';
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
-// Kiểm tra điều kiện quay
-router.get('/check-eligibility', authenticateCustomer, async (req, res) => {
-  try {
-    // Logic kiểm tra điều kiện quay
-    return res.json({ canSpin: true });
-  } catch (error) {
-    console.error('Check eligibility error:', error);
-    return res.status(500).json({ error: 'Lỗi kiểm tra điều kiện quay' });
-  }
-});
+// Admin routes
+router.get('/config', verifyAdminToken, getWheelConfig);
+router.put('/config', verifyAdminToken, updateWheelConfig);
 
-// Quay thưởng
-router.post('/spin', authenticateCustomer, spinLimiter, async (req, res) => {
-  try {
-    const customerId = req.customer.id;
-
-    // Lấy tất cả giải thưởng còn số lượng > 0
-    const availablePrizes = await prisma.prize.findMany({
-      where: {
-        quantity: {
-          gt: 0,
-        },
-      },
-    });
-
-    if (availablePrizes.length === 0) {
-      return res.status(400).json({ error: 'Hết giải thưởng' });
-    }
-
-    // Tính tổng tỷ lệ trúng
-    const totalRate = availablePrizes.reduce((sum, prize) => sum + prize.winRate, 0);
-
-    // Random số từ 0 đến tổng tỷ lệ
-    const random = Math.random() * totalRate;
-
-    // Chọn giải thưởng
-    let currentRate = 0;
-    let selectedPrize = null;
-
-    for (const prize of availablePrizes) {
-      currentRate += prize.winRate;
-      if (random <= currentRate) {
-        selectedPrize = prize;
-        break;
-      }
-    }
-
-    if (!selectedPrize) {
-      selectedPrize = availablePrizes[availablePrizes.length - 1];
-    }
-
-    // Giảm số lượng giải thưởng
-    await prisma.prize.update({
-      where: { id: selectedPrize.id },
-      data: { quantity: selectedPrize.quantity - 1 },
-    });
-
-    // Lưu lịch sử quay
-    const history = await prisma.prizeHistory.create({
-      data: {
-        customerId: customerId,
-        prizeId: selectedPrize.id,
-      },
-      include: {
-        prize: true,
-      },
-    });
-
-    return res.json({
-      prize: selectedPrize,
-      prizeIndex: availablePrizes.findIndex((p) => p.id === selectedPrize.id),
-      history,
-    });
-  } catch (error) {
-    console.error('Spin error:', error);
-    return res.status(500).json({ error: 'Lỗi quay thưởng' });
-  }
-});
-
-// Lấy lịch sử quay
-router.get('/history', authenticateCustomer, async (req, res) => {
-  try {
-    const customerId = req.customer.id;
-
-    const history = await prisma.prizeHistory.findMany({
-      where: {
-        customerId: customerId,
-      },
-      include: {
-        prize: true,
-      },
-      orderBy: {
-        spinTime: 'desc',
-      },
-    });
-
-    return res.json(history);
-  } catch (error) {
-    console.error('Get history error:', error);
-    return res.status(500).json({ error: 'Lỗi lấy lịch sử quay' });
-  }
-});
+// Customer routes
+router.post('/spin', verifyCustomerSession, spin);
 
 export default router;

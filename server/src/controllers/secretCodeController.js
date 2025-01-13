@@ -2,18 +2,67 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+// Lấy danh sách mã bí mật
+export const getSecretCodes = async (req, res) => {
+  try {
+    const secretCodes = await prisma.secretCode.findMany({
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+    res.json(secretCodes);
+  } catch (error) {
+    console.error('Get secret codes error:', error);
+    res.status(500).json({ error: 'Lỗi lấy danh sách mã bí mật' });
+  }
+};
+
+// Lấy chi tiết một mã bí mật
+export const getSecretCode = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const secretCode = await prisma.secretCode.findUnique({
+      where: { id },
+    });
+
+    if (!secretCode) {
+      return res.status(404).json({ error: 'Không tìm thấy mã bí mật' });
+    }
+
+    res.json(secretCode);
+  } catch (error) {
+    console.error('Get secret code error:', error);
+    res.status(500).json({ error: 'Lỗi lấy thông tin mã bí mật' });
+  }
+};
+
 // Tạo mã bí mật mới
 export const createSecretCode = async (req, res) => {
   try {
     const { expirationDate } = req.body;
 
-    // Tạo mã ngẫu nhiên theo format SHxxxx
+    // Validate input
+    if (!expirationDate) {
+      return res.status(400).json({
+        error: 'Vui lòng nhập thời gian hết hạn',
+      });
+    }
+
+    // Validate expirationDate
+    const expDate = new Date(expirationDate);
+    if (isNaN(expDate.getTime())) {
+      return res.status(400).json({
+        error: 'Thời gian hết hạn không hợp lệ',
+      });
+    }
+
+    // Tạo mã ngẫu nhiên với format "SHxxxx"
     const generateCode = () => {
       const random = Math.floor(1000 + Math.random() * 9000);
       return `SH${random}`;
     };
 
-    // Đảm bảo mã không trùng
+    // Đảm bảo mã không trùng lặp
     let code;
     let existingCode;
     do {
@@ -27,106 +76,51 @@ export const createSecretCode = async (req, res) => {
       data: {
         code,
         status: 'Chưa dùng',
-        expirationDate: new Date(expirationDate),
+        expirationDate: expDate,
+        usageCount: 0,
       },
     });
 
-    return res.status(201).json({
-      message: 'Tạo mã bí mật thành công',
-      secretCode,
-    });
+    res.status(201).json(secretCode);
   } catch (error) {
     console.error('Create secret code error:', error);
-    return res.status(500).json({
-      error: 'Có lỗi xảy ra khi tạo mã bí mật',
-    });
+    res.status(500).json({ error: 'Lỗi tạo mã bí mật' });
   }
 };
 
-// Lấy danh sách mã bí mật
-export const getSecretCodes = async (req, res) => {
-  try {
-    const secretCodes = await prisma.secretCode.findMany({
-      include: {
-        customer: {
-          select: {
-            name: true,
-            phoneNumber: true,
-          },
-        },
-      },
-      orderBy: {
-        expirationDate: 'desc',
-      },
-    });
-
-    return res.json(secretCodes);
-  } catch (error) {
-    console.error('Get secret codes error:', error);
-    return res.status(500).json({
-      error: 'Có lỗi xảy ra khi lấy danh sách mã bí mật',
-    });
-  }
-};
-
-// Cập nhật trạng thái mã
+// Cập nhật mã bí mật
 export const updateSecretCode = async (req, res) => {
   try {
     const { id } = req.params;
     const { status, expirationDate } = req.body;
 
-    // Kiểm tra mã tồn tại
-    const existingCode = await prisma.secretCode.findUnique({
+    const secretCode = await prisma.secretCode.findUnique({
       where: { id },
     });
 
-    if (!existingCode) {
-      return res.status(404).json({
-        error: 'Không tìm thấy mã bí mật',
-      });
+    if (!secretCode) {
+      return res.status(404).json({ error: 'Không tìm thấy mã bí mật' });
     }
 
-    // Không cho phép cập nhật mã đã sử dụng
-    if (existingCode.status === 'Đã dùng') {
-      return res.status(400).json({
-        error: 'Không thể cập nhật mã đã sử dụng',
-      });
+    const updateData = {};
+
+    if (status) {
+      updateData.status = status;
     }
 
-    // Validate thời gian hết hạn
-    const newExpirationDate = new Date(expirationDate);
-    if (isNaN(newExpirationDate.getTime())) {
-      return res.status(400).json({
-        error: 'Thời gian hết hạn không hợp lệ',
-      });
+    if (expirationDate) {
+      updateData.expirationDate = new Date(expirationDate);
     }
 
-    // Cập nhật trong database
     const updatedCode = await prisma.secretCode.update({
       where: { id },
-      data: {
-        status: status || existingCode.status,
-        expirationDate: newExpirationDate,
-      },
+      data: updateData,
     });
 
-    // Log để debug
-    console.log('Updated secret code:', {
-      id,
-      oldExpiration: existingCode.expirationDate,
-      newExpiration: updatedCode.expirationDate,
-      status: updatedCode.status,
-    });
-
-    return res.json({
-      message: 'Cập nhật mã bí mật thành công',
-      secretCode: updatedCode,
-    });
+    res.json(updatedCode);
   } catch (error) {
     console.error('Update secret code error:', error);
-    return res.status(500).json({
-      error: 'Có lỗi xảy ra khi cập nhật mã bí mật',
-    });
+    res.status(500).json({ error: 'Lỗi cập nhật mã bí mật' });
   }
 };
 
@@ -135,35 +129,51 @@ export const deleteSecretCode = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Kiểm tra mã đã được sử dụng chưa
-    const secretCode = await prisma.secretCode.findUnique({
-      where: { id },
-      include: { customer: true },
-    });
-
-    if (!secretCode) {
-      return res.status(404).json({
-        error: 'Không tìm thấy mã bí mật',
-      });
-    }
-
-    if (secretCode.customer) {
-      return res.status(400).json({
-        error: 'Không thể xóa mã đã được sử dụng',
-      });
-    }
-
     await prisma.secretCode.delete({
       where: { id },
     });
 
-    return res.json({
-      message: 'Xóa mã bí mật thành công',
-    });
+    res.json({ message: 'Xóa mã bí mật thành công' });
   } catch (error) {
     console.error('Delete secret code error:', error);
+    res.status(500).json({ error: 'Lỗi xóa mã bí mật' });
+  }
+};
+
+// Sửa lại phần xử lý khi customer sử dụng mã
+export const customerAuth = async (req, res) => {
+  try {
+    // ... phần validation giữ nguyên ...
+
+    // Kiểm tra mã bí mật
+    const validCode = await prisma.secretCode.findFirst({
+      where: {
+        code: secretCode,
+        status: 'Chưa dùng',
+        expirationDate: { gt: new Date() },
+      },
+    });
+
+    if (!validCode) {
+      return res.status(401).json({
+        error: 'Mã bí mật không hợp lệ hoặc đã hết hạn',
+      });
+    }
+
+    // Cập nhật trạng thái mã
+    await prisma.secretCode.update({
+      where: { id: validCode.id },
+      data: {
+        usageCount: { increment: 1 },
+        status: 'Đã dùng',
+      },
+    });
+
+    // ... phần code còn lại giữ nguyên ...
+  } catch (error) {
+    console.error('Customer auth error:', error);
     return res.status(500).json({
-      error: 'Có lỗi xảy ra khi xóa mã bí mật',
+      error: 'Hệ thống đang gặp sự cố. Vui lòng thử lại sau.',
     });
   }
 };

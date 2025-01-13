@@ -2,71 +2,110 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-export const spin = async (req, res) => {
+// Lấy danh sách giải thưởng
+export const getPrizes = async (req, res) => {
   try {
-    const customerId = req.session.customerId;
-
-    // Kiểm tra xem khách hàng đã quay chưa
-    const existingSpin = await prisma.spinResult.findFirst({
-      where: { customerId },
-    });
-
-    if (existingSpin) {
-      return res.status(400).json({ error: 'Bạn đã sử dụng lượt quay' });
-    }
-
-    // Lấy danh sách giải thưởng còn số lượng
-    const availablePrizes = await prisma.prize.findMany({
-      where: {
-        quantity: { gt: 0 },
+    const prizes = await prisma.prize.findMany({
+      orderBy: {
+        winRate: 'desc',
       },
     });
-
-    if (availablePrizes.length === 0) {
-      return res.status(400).json({ error: 'Hiện không có giải thưởng khả dụng' });
-    }
-
-    // Random giải thưởng dựa trên tỷ lệ
-    const totalRate = availablePrizes.reduce((sum, prize) => sum + prize.winRate, 0);
-    let random = Math.random() * totalRate;
-    let selectedPrize;
-
-    for (const prize of availablePrizes) {
-      random -= prize.winRate;
-      if (random <= 0) {
-        selectedPrize = prize;
-        break;
-      }
-    }
-
-    // Lưu kết quả và cập nhật số lượng giải thưởng
-    const spinResult = await prisma.$transaction([
-      prisma.spinResult.create({
-        data: {
-          customerId,
-          prizeId: selectedPrize.id,
-        },
-      }),
-      prisma.prize.update({
-        where: { id: selectedPrize.id },
-        data: { quantity: { decrement: 1 } },
-      }),
-    ]);
-
-    res.json({
-      message: 'Quay thưởng thành công',
-      prize: selectedPrize,
-    });
+    res.json(prizes);
   } catch (error) {
-    res.status(500).json({ error: 'Lỗi quay thưởng' });
+    console.error('Get prizes error:', error);
+    res.status(500).json({ error: 'Lỗi lấy danh sách giải thưởng' });
   }
 };
 
-export const getPrizes = async (req, res) => {
+// Lấy chi tiết một giải thưởng
+export const getPrize = async (req, res) => {
   try {
-    const prizes = await prisma.prize.findMany();
-    res.json({ prizes });
+    const { id } = req.params;
+    const prize = await prisma.prize.findUnique({
+      where: { id: parseInt(id) },
+    });
+
+    if (!prize) {
+      return res.status(404).json({ error: 'Không tìm thấy giải thưởng' });
+    }
+
+    res.json(prize);
   } catch (error) {
-    res.status(500).json({ error: 'Lỗi lấy danh sách giải thưởng' });
+    console.error('Get prize error:', error);
+    res.status(500).json({ error: 'Lỗi lấy thông tin giải thưởng' });
+  }
+};
+
+// Tạo giải thưởng mới
+export const createPrize = async (req, res) => {
+  try {
+    const { name, imageUrl, quantity, winRate } = req.body;
+
+    // Validate input
+    if (!name || !imageUrl || !quantity || winRate === undefined) {
+      return res.status(400).json({
+        error: 'Vui lòng nhập đầy đủ thông tin giải thưởng',
+      });
+    }
+
+    const prize = await prisma.prize.create({
+      data: {
+        name,
+        imageUrl,
+        quantity: parseInt(quantity),
+        winRate: parseFloat(winRate),
+      },
+    });
+
+    res.status(201).json(prize);
+  } catch (error) {
+    console.error('Create prize error:', error);
+    res.status(500).json({ error: 'Lỗi tạo giải thưởng' });
+  }
+};
+
+// Cập nhật giải thưởng
+export const updatePrize = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, imageUrl, quantity, winRate } = req.body;
+
+    // Validate input
+    if (!name || !imageUrl || !quantity || winRate === undefined) {
+      return res.status(400).json({
+        error: 'Vui lòng nhập đầy đủ thông tin giải thưởng',
+      });
+    }
+
+    const prize = await prisma.prize.update({
+      where: { id: parseInt(id) },
+      data: {
+        name,
+        imageUrl,
+        quantity: parseInt(quantity),
+        winRate: parseFloat(winRate),
+      },
+    });
+
+    res.json(prize);
+  } catch (error) {
+    console.error('Update prize error:', error);
+    res.status(500).json({ error: 'Lỗi cập nhật giải thưởng' });
+  }
+};
+
+// Xóa giải thưởng
+export const deletePrize = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    await prisma.prize.delete({
+      where: { id: parseInt(id) },
+    });
+
+    res.json({ message: 'Xóa giải thưởng thành công' });
+  } catch (error) {
+    console.error('Delete prize error:', error);
+    res.status(500).json({ error: 'Lỗi xóa giải thưởng' });
   }
 };

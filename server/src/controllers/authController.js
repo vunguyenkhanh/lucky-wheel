@@ -56,15 +56,15 @@ export const adminLogin = async (req, res) => {
         { expiresIn: '1d' },
       );
 
-      // Xóa session customer nếu có
-      if (req.session) {
-        req.session.destroy((err) => {
-          if (err) console.error('Error destroying session:', err);
-        });
-      }
+      // Set token vào httpOnly cookie
+      res.cookie('admin_token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 24 * 60 * 60 * 1000, // 1 day
+        path: '/api/admin', // Chỉ gửi cookie cho các route admin
+      });
 
       return res.status(200).json({
-        token,
         message: 'Đăng nhập thành công',
         user: {
           id: admin.id,
@@ -88,7 +88,9 @@ export const adminLogin = async (req, res) => {
 
 export const adminLogout = async (req, res) => {
   try {
-    res.clearCookie('admin_token');
+    res.clearCookie('admin_token', {
+      path: '/api/admin', // Phải chỉ định đúng path khi xóa cookie
+    });
     return res.status(200).json({
       message: 'Đăng xuất thành công',
     });
@@ -150,6 +152,7 @@ export const customerAuth = async (req, res) => {
         code: secretCode,
         status: 'Chưa dùng',
         expirationDate: { gt: new Date() },
+        maxUsage: { gt: 0 },
       },
     });
 
@@ -163,13 +166,11 @@ export const customerAuth = async (req, res) => {
     await prisma.secretCode.update({
       where: { id: validCode.id },
       data: {
-        status: 'Đã dùng',
+        status: validCode.maxUsage <= 1 ? 'Đã dùng' : 'Chưa dùng',
+        maxUsage: { decrement: 1 },
         customerId: customer.id,
       },
     });
-
-    // Xóa admin token nếu có
-    res.clearCookie('admin_token');
 
     // Set session cho customer
     req.session.customerId = customer.id;
@@ -179,7 +180,7 @@ export const customerAuth = async (req, res) => {
       message: 'Đăng nhập thành công',
       user: {
         id: customer.id,
-        name: customer.name,
+        fullName: customer.fullName,
         phoneNumber: customer.phoneNumber,
         role: 'customer',
       },
@@ -220,15 +221,10 @@ export const checkSecretCode = async (req, res) => {
 
 export const customerRegister = async (req, res) => {
   try {
-    console.log('Register request body:', req.body); // Log request data
-
-    const { name, phoneNumber, address } = req.body;
-
-    // Log validation
-    console.log('Validating input:', { name, phoneNumber, address });
+    const { fullName, phoneNumber, address } = req.body;
 
     // Validate input
-    if (!name || !phoneNumber || !address) {
+    if (!fullName || !phoneNumber || !address) {
       return res.status(400).json({
         error: 'Vui lòng nhập đầy đủ thông tin',
       });
@@ -245,34 +241,24 @@ export const customerRegister = async (req, res) => {
       });
     }
 
-    // Log before creating customer
-    console.log('Creating customer with data:', {
-      name: name.trim(),
-      phoneNumber: phoneNumber.trim(),
-      address: address.trim(),
-    });
-
     const customer = await prisma.customer.create({
       data: {
-        name: name.trim(),
+        fullName: fullName.trim(),
         phoneNumber: phoneNumber.trim(),
         address: address.trim(),
       },
     });
 
-    // Log created customer
-    console.log('Created customer:', customer);
-
     return res.status(201).json({
       message: 'Đăng ký thành công',
-      customer,
+      customer: {
+        id: customer.id,
+        fullName: customer.fullName,
+        phoneNumber: customer.phoneNumber,
+      },
     });
   } catch (error) {
     console.error('Customer register error:', error);
-    // Log detailed error
-    if (error.code === 'P2002') {
-      console.log('Unique constraint violation:', error.meta);
-    }
     return res.status(500).json({
       error: 'Có lỗi xảy ra khi đăng ký. Vui lòng thử lại sau.',
     });

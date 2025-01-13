@@ -1,19 +1,20 @@
-import { Router } from 'express';
+import express from 'express';
 import {
   createSecretCode,
   deleteSecretCode,
+  getSecretCode,
   getSecretCodes,
   updateSecretCode,
 } from '../controllers/secretCodeController.js';
-import { authenticateAdmin } from '../middleware/auth.js';
+import { verifyAdminToken } from '../middleware/auth.js';
 
-const router = Router();
+const router = express.Router();
 
-// Tất cả routes đều yêu cầu đăng nhập admin
-router.use(authenticateAdmin);
+router.use(verifyAdminToken); // Tất cả routes cần xác thực admin
 
 router.post('/', createSecretCode);
 router.get('/', getSecretCodes);
+router.get('/:id', getSecretCode);
 router.put('/:id', updateSecretCode);
 router.delete('/:id', deleteSecretCode);
 
