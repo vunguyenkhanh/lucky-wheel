@@ -5,6 +5,7 @@ import { secretCodeApi } from '../../api/secretCodeApi';
 import CountdownTimer from '../../components/common/CountdownTimer';
 import LoadingButton from '../../components/common/LoadingButton';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import Modal from '../../components/common/Modal';
 import { useToast } from '../../contexts/ToastContext';
 
 // Hàm format thời gian theo định dạng DD/MM/YYYY HH:mm:ss
@@ -405,142 +406,132 @@ function SecretCodeManagement() {
 
       {/* Modal tạo/cập nhật */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-lg w-full max-w-md">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">
-                {selectedCode ? 'Cập nhật mã bí mật' : 'Tạo mã bí mật mới'}
-              </h2>
-              <button
-                onClick={() => setShowModal(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={selectedCode ? handleUpdate : handleCreate}>
-              {selectedCode && (
-                <>
-                  {/* Hiển thị mã bí mật */}
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700">Mã bí mật</label>
-                    <div className="mt-1 flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={selectedCode.code}
-                        readOnly
-                        className="block w-full rounded-md border-gray-300 bg-gray-50 cursor-default"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Trạng thái */}
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700">Trạng thái</label>
-                    <select
-                      value={formData.status || 'Chưa dùng'}
-                      onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    >
-                      <option value="Chưa dùng">Chưa dùng</option>
-                      <option value="Hết hạn">Hết hạn</option>
-                    </select>
-                  </div>
-                </>
-              )}
-
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700">Thời gian hết hạn</label>
-
-                {/* Thêm nút chọn nhanh thời gian */}
-                <div className="mt-2 mb-3 flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleQuickSelect(5)}
-                    className="px-3 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded-full hover:bg-blue-100"
-                  >
-                    +5 phút
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickSelect(10)}
-                    className="px-3 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded-full hover:bg-blue-100"
-                  >
-                    +10 phút
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickSelect(20)}
-                    className="px-3 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded-full hover:bg-blue-100"
-                  >
-                    +20 phút
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickSelect(30)}
-                    className="px-3 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded-full hover:bg-blue-100"
-                  >
-                    +30 phút
-                  </button>
-                </div>
-
-                {/* Input hiển thị thời gian */}
-                <div className="mb-2">
-                  <input
-                    type="text"
-                    value={formData.displayDateTime || ''}
-                    readOnly
-                    className="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 cursor-default"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs text-gray-500">Ngày</label>
+        <Modal
+          isOpen={showModal}
+          onClose={() => setShowModal(false)}
+          title={selectedCode ? 'Cập nhật mã bí mật' : 'Tạo mã bí mật mới'}
+        >
+          <form onSubmit={selectedCode ? handleUpdate : handleCreate}>
+            {selectedCode && (
+              <>
+                {/* Hiển thị mã bí mật */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700">Mã bí mật</label>
+                  <div className="mt-1 flex items-center gap-2">
                     <input
-                      type="date"
-                      value={formData.expirationDate || ''}
-                      onChange={handleDateChange}
-                      min={new Date().toISOString().split('T')[0]}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-500">Giờ</label>
-                    <input
-                      type="time"
-                      step="1"
-                      value={formData.expirationTime || ''}
-                      onChange={handleTimeChange}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                      required
+                      type="text"
+                      value={selectedCode.code}
+                      readOnly
+                      className="block w-full rounded-md border-gray-300 bg-gray-50 cursor-default"
                     />
                   </div>
                 </div>
-                <p className="mt-1 text-xs text-gray-500">Định dạng: DD/MM/YYYY HH:mm:ss</p>
-              </div>
 
-              <div className="flex justify-end gap-2 mt-6">
+                {/* Trạng thái */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700">Trạng thái</label>
+                  <select
+                    value={formData.status || 'Chưa dùng'}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  >
+                    <option value="Chưa dùng">Chưa dùng</option>
+                    <option value="Hết hạn">Hết hạn</option>
+                  </select>
+                </div>
+              </>
+            )}
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700">Thời gian hết hạn</label>
+
+              {/* Thêm nút chọn nhanh thời gian */}
+              <div className="mt-2 mb-3 flex flex-wrap gap-2">
                 <button
                   type="button"
-                  onClick={() => setShowModal(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
+                  onClick={() => handleQuickSelect(5)}
+                  className="px-3 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded-full hover:bg-blue-100"
                 >
-                  Hủy
+                  +5 phút
                 </button>
-                <LoadingButton
-                  type="submit"
-                  loading={loading}
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md"
+                <button
+                  type="button"
+                  onClick={() => handleQuickSelect(10)}
+                  className="px-3 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded-full hover:bg-blue-100"
                 >
-                  {selectedCode ? 'Cập nhật' : 'Tạo mới'}
-                </LoadingButton>
+                  +10 phút
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleQuickSelect(20)}
+                  className="px-3 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded-full hover:bg-blue-100"
+                >
+                  +20 phút
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleQuickSelect(30)}
+                  className="px-3 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded-full hover:bg-blue-100"
+                >
+                  +30 phút
+                </button>
               </div>
-            </form>
-          </div>
-        </div>
+
+              {/* Input hiển thị thời gian */}
+              <div className="mb-2">
+                <input
+                  type="text"
+                  value={formData.displayDateTime || ''}
+                  readOnly
+                  className="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 cursor-default"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs text-gray-500">Ngày</label>
+                  <input
+                    type="date"
+                    value={formData.expirationDate || ''}
+                    onChange={handleDateChange}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500">Giờ</label>
+                  <input
+                    type="time"
+                    step="1"
+                    value={formData.expirationTime || ''}
+                    onChange={handleTimeChange}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    required
+                  />
+                </div>
+              </div>
+              <p className="mt-1 text-xs text-gray-500">Định dạng: DD/MM/YYYY HH:mm:ss</p>
+            </div>
+
+            <div className="flex justify-end gap-2 mt-6">
+              <button
+                type="button"
+                onClick={() => setShowModal(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
+              >
+                Hủy
+              </button>
+              <LoadingButton
+                type="submit"
+                loading={loading}
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md"
+              >
+                {selectedCode ? 'Cập nhật' : 'Tạo mới'}
+              </LoadingButton>
+            </div>
+          </form>
+        </Modal>
       )}
     </div>
   );

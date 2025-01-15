@@ -32,7 +32,7 @@ export const getSecretCode = async (req, res) => {
     res.json(secretCode);
   } catch (error) {
     console.error('Get secret code error:', error);
-    res.status(500).json({ error: 'Lỗi lấy thông tin mã bí mật' });
+    return res.status(500).json({ error: 'Lỗi lấy thông tin mã bí mật' });
   }
 };
 
@@ -143,7 +143,15 @@ export const deleteSecretCode = async (req, res) => {
 // Sửa lại phần xử lý khi customer sử dụng mã
 export const customerAuth = async (req, res) => {
   try {
-    // ... phần validation giữ nguyên ...
+    const { phoneNumber, secretCode } = req.body; // Giả sử bạn nhận phoneNumber từ body
+
+    // Validate phone number format
+    const phoneNumberRegex = /^[0-9]{10}$/;
+    if (!phoneNumberRegex.test(phoneNumber)) {
+      return res.status(400).json({
+        error: 'Số điện thoại không hợp lệ',
+      });
+    }
 
     // Kiểm tra mã bí mật
     const validCode = await prisma.secretCode.findFirst({

@@ -10,6 +10,7 @@ dotenv.config();
 // Import các routes và middleware sau khi load biến môi trường
 import { requestLogger } from './middleware/logging.js';
 import { apiLimiter } from './middleware/rateLimiter.js';
+import adminRoutes from './routes/admin.js';
 import authRoutes from './routes/auth.js';
 import prizeRoutes from './routes/prize.js';
 import secretCodeRoutes from './routes/secretCode.js';
@@ -22,7 +23,7 @@ app.use(cookieParser());
 
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    origin: 'http://localhost:5173',
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -57,6 +58,7 @@ app.use('/api/admin/prizes', prizeRoutes);
 app.use('/api/prizes', prizeRoutes);
 app.use('/api/wheel', wheelRoutes);
 app.use('/api/admin/secret-codes', secretCodeRoutes);
+app.use('/api/admin', adminRoutes);
 
 const PORT = process.env.PORT || 3000;
 

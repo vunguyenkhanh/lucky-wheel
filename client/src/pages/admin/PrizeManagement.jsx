@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { FaPlus } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import PrizeForm from '../../components/admin/PrizeForm';
-import Modal from '../../components/common/Modal';
+import { Modal } from '../../components/common/Modal';
 import { useAdminStore } from '../../store/adminStore';
 
 const PrizeManagement = () => {

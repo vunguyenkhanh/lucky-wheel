@@ -1,15 +1,19 @@
 import express from 'express';
 import {
+  createAdmin,
   deactivateSecretCode,
+  deleteAdmin,
   deletePrize,
   generateSecretCode,
+  getAdmins,
   getAnalytics,
   getPrizeById,
   getPrizes,
   getSecretCodes,
   managePrize,
+  updateAdmin,
 } from '../controllers/adminController.js';
-import { authenticateAdmin } from '../middleware/auth.js';
+import { authenticateAdmin, verifyAdminToken } from '../middleware/auth.js';
 import { apiLimiter } from '../middleware/rateLimiter.js';
 import { sanitizeInput } from '../middleware/security.js';
 import {
@@ -38,5 +42,13 @@ router.delete('/prizes/:id', deletePrize);
 
 // Thống kê
 router.get('/analytics', validateDateRange, getAnalytics);
+
+// Route để lấy danh sách admin
+router.get('/', getAdmins);
+
+// Thêm routes cho quản lý admin
+router.post('/', verifyAdminToken, createAdmin);
+router.put('/:id', verifyAdminToken, updateAdmin);
+router.delete('/:id', verifyAdminToken, deleteAdmin);
 
 export default router;

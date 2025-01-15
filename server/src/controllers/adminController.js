@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
@@ -316,5 +317,127 @@ export const deactivateSecretCode = async (req, res) => {
     res.json({ message: 'Vô hiệu hóa mã bí mật thành công' });
   } catch (error) {
     res.status(500).json({ error: 'Lỗi vô hiệu hóa mã bí mật' });
+  }
+};
+
+// Lấy danh sách admin
+export const getAdmins = async (req, res) => {
+  try {
+    const admins = await prisma.admin.findMany(); // Lấy danh sách admin từ database
+    res.json(admins);
+  } catch (error) {
+    console.error('Get admins error:', error);
+    res.status(500).json({ error: 'Lỗi lấy danh sách admin' });
+  }
+};
+
+// Thêm các hàm xử lý admin
+export const createAdmin = async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    // Validate input
+    if (!username?.trim() || !password?.trim()) {
+      return res.status(400).json({ error: 'Username và password không được để trống' });
+    }
+
+    // Kiểm tra username đã tồn tại
+    const existingAdmin = await prisma.admin.findUnique({
+      where: { username },
+    });
+
+    if (existingAdmin) {
+      return res.status(400).json({ error: 'Username đã tồn tại' });
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Tạo admin mới
+    const admin = await prisma.admin.create({
+      data: {
+        username,
+        password: hashedPassword,
+      },
+    });
+
+    // Loại bỏ password trước khi trả về
+    const { password: _, ...adminWithoutPassword } = admin;
+    res.status(201).json(adminWithoutPassword);
+  } catch (error) {
+    console.error('Create admin error:', error);
+    res.status(500).json({ error: 'Lỗi tạo admin' });
+  }
+};
+
+export const updateAdmin = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { username, password } = req.body;
+
+    // Validate input
+    if (!username?.trim()) {
+      return res.status(400).json({ error: 'Username không được để trống' });
+    }
+
+    // Kiểm tra username đã tồn tại (trừ admin hiện tại)
+    const existingAdmin = await prisma.admin.findFirst({
+      where: {
+        username,
+        NOT: { id },
+      },
+    });
+
+    if (existingAdmin) {
+      return res.status(400).json({ error: 'Username đã tồn tại' });
+    }
+
+    // Cập nhật admin
+    const updateData = { username };
+    if (password?.trim()) {
+      updateData.password = await bcrypt.hash(password, 10);
+    }
+
+    const admin = await prisma.admin.update({
+      where: { id },
+      data: updateData,
+    });
+
+    // Loại bỏ password trước khi trả về
+    const { password: _, ...adminWithoutPassword } = admin;
+    res.json(adminWithoutPassword);
+  } catch (error) {
+    console.error('Update admin error:', error);
+    res.status(500).json({ error: 'Lỗi cập nhật admin' });
+  }
+};
+
+export const deleteAdmin = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Kiểm tra admin tồn tại
+    const admin = await prisma.admin.findUnique({
+      where: { id },
+    });
+
+    if (!admin) {
+      return res.status(404).json({ error: 'Không tìm thấy admin' });
+    }
+
+    // Không cho phép xóa admin cuối cùng
+    const adminCount = await prisma.admin.count();
+    if (adminCount <= 1) {
+      return res.status(400).json({ error: 'Không thể xóa admin cuối cùng' });
+    }
+
+    await prisma.admin.delete({
+      where: { id },
+    });
+
+    res.json({ message: 'Xóa admin thành công' });
+  } catch (error) {
+    console.error('Delete admin error:', error);
+    res.status(500).json({ error: 'Lỗi xóa admin' });
   }
 };

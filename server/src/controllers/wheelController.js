@@ -6,6 +6,9 @@ const prisma = new PrismaClient();
 export const getWheelConfig = async (req, res) => {
   try {
     const config = await prisma.wheelConfig.findFirst();
+    if (!config) {
+      return res.status(404).json({ error: 'Cấu hình vòng quay không tồn tại' });
+    }
     const prizes = await prisma.prize.findMany({
       where: {
         quantity: { gt: 0 }, // Chỉ lấy giải thưởng còn số lượng
@@ -55,6 +58,10 @@ export const spin = async (req, res) => {
     const customerId = req.session.customerId;
 
     // Kiểm tra xem khách hàng đã quay chưa
+    if (!customerId) {
+      return res.status(401).json({ error: 'Bạn cần đăng nhập để quay thưởng' });
+    }
+
     const existingSpin = await prisma.spinResult.findFirst({
       where: { customerId },
     });

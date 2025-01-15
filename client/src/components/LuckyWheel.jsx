@@ -15,10 +15,20 @@ const LuckyWheel = () => {
     colors: [],
     fontFamily: 'Arial',
   });
+  const [timeLeft, setTimeLeft] = useState(null);
 
   useEffect(() => {
     loadWheelData();
   }, []);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (timeLeft > 0) {
+        setTimeLeft((prev) => prev - 1);
+      }
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [timeLeft]);
 
   const loadWheelData = async () => {
     try {
@@ -35,7 +45,7 @@ const LuckyWheel = () => {
       setConfig(config);
     } catch (error) {
       console.error('Load wheel data error:', error);
-      toast.error('Lỗi tải dữ liệu vòng quay');
+      toast.error(error.response?.data?.error || 'Lỗi tải dữ liệu vòng quay');
     }
   };
 
